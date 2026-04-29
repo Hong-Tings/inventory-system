@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>进销存管理系统 - 效果图</title>
+  <style>
+    :root {
+      --green: #2e7d32;
+      --green-light: #e8f5e9;
+      --green-border: #c8e6c9;
+      --text: #333;
+      --text-secondary: #666;
+      --text-muted: #999;
+      --bg: #f5f7f5;
+      --bg-card: #fff;
+      --border: #e8ece8;
+      --shadow: 0 1px 4px rgba(0,0,0,0.06);
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+      background: var(--bg); color: var(--text); font-size: 14px;
+    }
+
+    /* Layout */
+    .app { display: flex; height: 100vh; }
+    .sidebar {
+      width: 220px; min-width: 220px; background: #fff;
+      border-right: 1px solid var(--border); display: flex; flex-direction: column;
+    }
+    .logo { height: 56px; display: flex; align-items: center; padding: 0 20px; border-bottom: 1px solid var(--border); }
+    .logo .text { font-size: 16px; font-weight: 700; color: var(--green); letter-spacing: 1px; }
+    .nav { flex: 1; padding: 12px; }
+    .nav-item {
+      display: flex; align-items: center; gap: 8px; padding: 10px 12px;
+      margin: 2px 0; border-radius: 6px; color: var(--text-secondary);
+      cursor: pointer; font-size: 14px; transition: all 0.15s;
+    }
+    .nav-item:hover { background: var(--green-light); color: var(--green); }
+    .nav-item.active { background: var(--green); color: #fff; font-weight: 500; }
+    .nav-item .icon { width: 18px; text-align: center; font-size: 14px; }
+
+    .main { flex: 1; display: flex; flex-direction: column; }
+    .header {
+      height: 56px; background: #fff; display: flex; align-items: center;
+      justify-content: space-between; padding: 0 24px;
+      border-bottom: 1px solid var(--border);
+    }
+    .header-left { display: flex; align-items: center; gap: 8px; color: var(--text-muted); font-size: 13px; }
+    .header-right { display: flex; align-items: center; gap: 12px; }
+    .avatar {
+      width: 30px; height: 30px; border-radius: 50%; background: var(--green);
+      color: #fff; display: flex; align-items: center; justify-content: center;
+      font-size: 12px; font-weight: 600;
+    }
+
+    .content { flex: 1; padding: 24px; overflow-y: auto; }
+    .page-title {
+      font-size: 18px; font-weight: 600; color: var(--text);
+      margin-bottom: 20px; padding-bottom: 12px;
+      border-bottom: 2px solid var(--green);
+    }
+
+    /* Stats */
+    .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+    .stat-card {
+      background: var(--bg-card); border-radius: 8px; padding: 20px;
+      box-shadow: var(--shadow); border: 1px solid var(--border);
+    }
+    .stat-card .label { font-size: 13px; color: var(--text-muted); margin-bottom: 4px; }
+    .stat-card .value { font-size: 26px; font-weight: 700; color: var(--text); }
+
+    /* Cards */
+    .card {
+      background: var(--bg-card); border-radius: 8px; padding: 20px 24px;
+      box-shadow: var(--shadow); border: 1px solid var(--border); margin-bottom: 20px;
+    }
+    .card-title { font-size: 15px; font-weight: 600; color: var(--text); margin-bottom: 16px; }
+
+    /* Grid */
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+
+    /* Search bar */
+    .search-bar {
+      display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+      padding: 16px 20px; background: var(--bg-card); border-radius: 8px;
+      border: 1px solid var(--border); margin-bottom: 16px;
+    }
+    .search-bar input, .search-bar select {
+      padding: 7px 12px; border: 1px solid var(--border); border-radius: 6px;
+      font-size: 13px; outline: none; background: #fff;
+    }
+    .search-bar input:focus, .search-bar select:focus { border-color: var(--green); }
+
+    /* Table */
+    table { width: 100%; border-collapse: collapse; }
+    thead th {
+      background: #f8faf8; text-align: left; padding: 10px 14px;
+      font-size: 12px; color: var(--text-muted); font-weight: 600;
+      border-bottom: 1px solid var(--border); text-transform: uppercase;
+    }
+    tbody td { padding: 10px 14px; border-bottom: 1px solid var(--border); font-size: 13px; }
+    tbody tr:hover { background: #fafcfa; }
+    tbody tr:last-child td { border-bottom: none; }
+
+    /* Tags */
+    .tag {
+      display: inline-block; padding: 2px 10px; border-radius: 3px;
+      font-size: 12px;
+    }
+    .tag-green { background: var(--green-light); color: var(--green); }
+    .tag-gray { background: #f0f0f0; color: #999; }
+    .tag-red { background: #fbe9e7; color: #c62828; }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex; align-items: center; gap: 4px; padding: 7px 16px;
+      border-radius: 6px; font-size: 13px; cursor: pointer; border: none; transition: all 0.15s;
+    }
+    .btn-primary { background: var(--green); color: #fff; }
+    .btn-primary:hover { background: #1b5e20; }
+    .btn-outline { background: #fff; color: var(--text-secondary); border: 1px solid var(--border); }
+    .btn-outline:hover { border-color: var(--green); color: var(--green); }
+    .btn-sm { padding: 5px 12px; font-size: 12px; }
+    .btn-xs { padding: 3px 8px; font-size: 11px; }
+
+    /* Forms */
+    .form-row { display: flex; gap: 16px; margin-bottom: 16px; }
+    .form-group { flex: 1; }
+    .form-group label { display: block; font-size: 13px; color: var(--text-muted); margin-bottom: 6px; }
+    .form-control {
+      width: 100%; padding: 8px 12px; border: 1px solid var(--border);
+      border-radius: 6px; font-size: 13px; outline: none; background: #fff;
+    }
+    .form-control:focus { border-color: var(--green); }
+
+    /* Steps */
+    .steps { display: flex; margin-bottom: 24px; background: #fff; border-radius: 8px; border: 1px solid var(--border); overflow: hidden; }
+    .step { flex: 1; text-align: center; padding: 12px; font-size: 13px; color: var(--text-muted); border-right: 1px solid var(--border); }
+    .step:last-child { border-right: none; }
+    .step.active { background: var(--green); color: #fff; font-weight: 500; }
+
+    /* Action bar */
+    .action-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+
+    /* Tabs */
+    .tabs { display: flex; gap: 0; margin-bottom: 16px; border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }
+    .tab { flex: 1; text-align: center; padding: 9px; font-size: 13px; cursor: pointer; color: var(--text-muted); background: #fff; transition: all 0.15s; }
+    .tab.active { background: var(--green); color: #fff; font-weight: 500; }
+
+    /* Chart bars */
+    .chart { display: flex; gap: 6px; height: 150px; align-items: flex-end; padding: 0 4px; }
+    .chart .bar {
+      flex: 1; background: var(--green); border-radius: 3px 3px 0 0;
+      min-height: 4px; opacity: 0.7; transition: opacity 0.2s;
+    }
+    .chart .bar:hover { opacity: 1; }
+    .chart-labels { display: flex; gap: 6px; margin-top: 6px; }
+    .chart-labels span { flex: 1; text-align: center; font-size: 10px; color: var(--text-muted); }
+
+    /* Alert item */
+    .alert-item {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 8px 12px; background: #fff8e1; border-radius: 6px; margin-bottom: 6px;
+      font-size: 13px;
+    }
+    .alert-item .qty { color: #e65100; font-weight: 600; }
+  </style>
+</head>
+<body>
+<div id="app">
+<div class="app">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="logo"><span class="text">进销存管理</span></div>
+    <nav class="nav">
+      <div v-for="item in navItems" :key="item.key"
+           class="nav-item" :class="{ active: page === item.key }"
+           @click="page = item.key">
+        <span class="icon">{{ item.icon }}</span>
+        <span>{{ item.label }}</span>
+      </div>
+    </nav>
+  </aside>
+
+  <!-- Main -->
+  <div class="main">
+    <header class="header">
+      <div class="header-left"><span>进销存管理系统</span></div>
+      <div class="header-right"><span style="color:var(--text-muted);font-size:13px;">管理员</span><div class="avatar">管</div></div>
+    </header>
+
+    <div class="content">
+
+      <!-- ===== Dashboard ===== -->
+      <div v-if="page === 'dashboard'">
+        <div class="page-title">工作台</div>
+        <div class="stats">
+          <div class="stat-card"><div class="label">商品总数</div><div class="value">1,286</div></div>
+          <div class="stat-card"><div class="label">仓库数量</div><div class="value">3</div></div>
+          <div class="stat-card"><div class="label">今日入库</div><div class="value">24</div></div>
+          <div class="stat-card"><div class="label">今日出库</div><div class="value">18</div></div>
+        </div>
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-title">快捷操作</div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+              <button class="btn btn-primary btn-sm">+ 新建入库单</button>
+              <button class="btn btn-primary btn-sm" style="background:#e65100;">+ 新建出库单</button>
+              <button class="btn btn-outline btn-sm">+ 新建盘点单</button>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-title">库存预警</div>
+            <div v-for="w in alerts" :key="w.name" class="alert-item">
+              <span>{{ w.name }}</span>
+              <span class="qty">{{ w.qty }} / {{ w.min }}</span>
+            </div>
+            <div v-if="!alerts.length" style="color:var(--text-muted);padding:16px;text-align:center;">暂无预警</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== Products ===== -->
+      <div v-if="page === 'product'">
+        <div class="action-bar">
+          <div class="page-title" style="margin-bottom:0;border:none;padding-bottom:0;">商品管理</div>
+          <div><button class="btn btn-outline btn-sm">分类管理</button><span style="width:8px;display:inline-block;"></span><button class="btn btn-primary btn-sm">+ 新增</button></div>
+        </div>
+        <div class="search-bar">
+          <input placeholder="商品名称" style="width:180px;" />
+          <input placeholder="商品编码" style="width:160px;" />
+          <select style="width:110px;"><option>全部状态</option><option>启用</option><option>停用</option></select>
+          <button class="btn btn-primary btn-sm">查询</button>
+          <button class="btn btn-outline btn-sm">重置</button>
+        </div>
+        <div class="card">
+          <table>
+            <thead><tr><th>编码</th><th>名称</th><th>规格</th><th>单位</th><th>采购价</th><th>销售价</th><th>安全库存</th><th>状态</th><th></th></tr></thead>
+            <tbody>
+              <tr v-for="r in products" :key="r.code">
+                <td style="color:var(--text-muted);">{{ r.code }}</td>
+                <td style="font-weight:500;">{{ r.name }}</td>
+                <td>{{ r.spec }}</td><td>{{ r.unit }}</td>
+                <td>¥{{ r.purchase }}</td><td>¥{{ r.sale }}</td>
+                <td>{{ r.min }}</td>
+                <td><span class="tag tag-green">启用</span></td>
+                <td><button class="btn btn-outline btn-xs">编辑</button></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ===== Purchase ===== -->
+      <div v-if="page === 'purchase'">
+        <div class="action-bar">
+          <div class="page-title" style="margin-bottom:0;border:none;padding-bottom:0;">采购入库</div>
+          <button class="btn btn-primary btn-sm">+ 新建入库单</button>
+        </div>
+        <div class="search-bar">
+          <input placeholder="入库单号" style="width:180px;" />
+          <select style="width:110px;"><option>全部状态</option><option>已入库</option><option>草稿</option></select>
+          <input type="date" style="width:150px;" />
+          <input type="date" style="width:150px;" />
+          <button class="btn btn-primary btn-sm">查询</button>
+        </div>
+        <div class="card">
+          <table>
+            <thead><tr><th>单号</th><th>供应商</th><th>仓库</th><th>数量</th><th>金额</th><th>操作人</th><th>日期</th><th>状态</th><th></th></tr></thead>
+            <tbody>
+              <tr v-for="r in purchases" :key="r.no">
+                <td style="font-weight:500;">{{ r.no }}</td>
+                <td>{{ r.supplier }}</td><td>{{ r.warehouse }}</td>
+                <td>{{ r.qty }}</td><td>¥{{ r.amt }}</td>
+                <td>{{ r.operator }}</td><td>{{ r.date }}</td>
+                <td><span class="tag" :class="r.status === '已入库' ? 'tag-green' : 'tag-gray'">{{ r.status }}</span></td>
+                <td><button class="btn btn-outline btn-xs">详情</button></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ===== Purchase Create ===== -->
+      <div v-if="page === 'purchase-create'">
+        <div class="page-title">新建入库单</div>
+        <div class="steps">
+          <div class="step active">选择供应商与仓库</div>
+          <div class="step active">添加商品明细</div>
+          <div class="step active">确认入库</div>
+        </div>
+        <div class="card">
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:8px;">
+            <div class="form-group"><label>供应商</label><select class="form-control"><option>广州绿植基地</option><option>佛山园艺场</option></select></div>
+            <div class="form-group"><label>仓库</label><select class="form-control"><option>主仓库</option><option>二号仓库</option></select></div>
+            <div class="form-group"><label>库位</label><select class="form-control"><option>A-01-01</option><option>A-01-02</option></select></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="action-bar" style="margin-bottom:12px;">
+            <span class="card-title" style="margin-bottom:0;">商品明细</span>
+            <button class="btn btn-primary btn-sm">+ 添加</button>
+          </div>
+          <table>
+            <thead><tr><th>商品</th><th>数量</th><th>单价</th><th>金额</th><th>批次号</th><th></th></tr></thead>
+            <tbody>
+              <tr v-for="r in createItems" :key="r.name">
+                <td style="font-weight:500;">{{ r.name }}</td><td>{{ r.qty }}</td><td>¥{{ r.price }}</td><td style="font-weight:600;">¥{{ r.amt }}</td><td>{{ r.batch }}</td>
+                <td><button class="btn btn-outline btn-xs">删除</button></td>
+              </tr>
+            </tbody>
+          </table>
+          <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:16px;">
+            <button class="btn btn-outline btn-sm">保存草稿</button>
+            <button class="btn btn-primary btn-sm">确认入库</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== Sales ===== -->
+      <div v-if="page === 'sales'">
+        <div class="action-bar">
+          <div class="page-title" style="margin-bottom:0;border:none;padding-bottom:0;">销售出库</div>
+          <button class="btn btn-primary btn-sm" style="background:#e65100;">+ 新建出库单</button>
+        </div>
+        <div class="search-bar">
+          <input placeholder="出库单号" style="width:180px;" /><input placeholder="客户" style="width:160px;" />
+          <button class="btn btn-primary btn-sm">查询</button>
+        </div>
+        <div class="card">
+          <table>
+            <thead><tr><th>单号</th><th>客户</th><th>仓库</th><th>数量</th><th>金额</th><th>销售员</th><th>日期</th><th>状态</th><th></th></tr></thead>
+            <tbody>
+              <tr v-for="r in sales" :key="r.no">
+                <td style="font-weight:500;">{{ r.no }}</td><td>{{ r.customer }}</td><td>{{ r.warehouse }}</td>
+                <td>{{ r.qty }}</td><td>¥{{ r.amt }}</td><td>{{ r.salesman }}</td><td>{{ r.date }}</td>
+                <td><span class="tag" :class="r.status === '已出库' ? 'tag-green' : 'tag-gray'">{{ r.status }}</span></td>
+                <td><button class="btn btn-outline btn-xs">详情</button></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ===== Inventory ===== -->
+      <div v-if="page === 'inventory'">
+        <div class="action-bar">
+          <div class="page-title" style="margin-bottom:0;border:none;padding-bottom:0;">库存查询</div>
+          <button class="btn btn-outline btn-sm">库存流水</button>
+        </div>
+        <div class="search-bar">
+          <input placeholder="商品名称" style="width:200px;" /><select style="width:140px;"><option>全部仓库</option></select>
+          <button class="btn btn-primary btn-sm">查询</button>
+        </div>
+        <div class="card">
+          <table>
+            <thead><tr><th>编码</th><th>名称</th><th>仓库</th><th>库位</th><th>批次</th><th>可用库存</th><th>锁定</th></tr></thead>
+            <tbody>
+              <tr v-for="r in inventory" :key="r.code">
+                <td style="color:var(--text-muted);">{{ r.code }}</td>
+                <td style="font-weight:500;">{{ r.name }}</td>
+                <td>{{ r.warehouse }}</td><td>{{ r.location }}</td><td>{{ r.batch }}</td>
+                <td><span :style="{color: r.qty <= 5 ? '#c62828' : '#2e7d32', fontWeight: 600}">{{ r.qty }}</span></td>
+                <td>{{ r.locked }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ===== Stocktake ===== -->
+      <div v-if="page === 'stocktake'">
+        <div class="action-bar">
+          <div class="page-title" style="margin-bottom:0;border:none;padding-bottom:0;">库存盘点</div>
+          <button class="btn btn-primary btn-sm">+ 新建盘点单</button>
+        </div>
+        <div class="card">
+          <table>
+            <thead><tr><th>盘点单号</th><th>仓库</th><th>方式</th><th>商品数</th><th>差异</th><th>盘点人</th><th>状态</th><th></th></tr></thead>
+            <tbody>
+              <tr v-for="r in stocktakes" :key="r.no">
+                <td style="font-weight:500;">{{ r.no }}</td><td>{{ r.warehouse }}</td><td>{{ r.type }}</td>
+                <td>{{ r.total }}</td>
+                <td><span :style="{color: r.diff > 0 ? '#e65100' : r.diff < 0 ? '#c62828' : '#999', fontWeight: 600}">{{ r.diff > 0 ? '+' : '' }}{{ r.diff }}</span></td>
+                <td>{{ r.operator }}</td>
+                <td><span class="tag" :class="r.status === '已审核' ? 'tag-green' : 'tag-gray'">{{ r.status }}</span></td>
+                <td><button class="btn btn-outline btn-xs">详情</button></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ===== Report ===== -->
+      <div v-if="page === 'report'">
+        <div class="page-title">统计报表</div>
+        <div class="tabs">
+          <div class="tab" :class="{ active: rtab === 'in' }" @click="rtab='in'">入库汇总</div>
+          <div class="tab" :class="{ active: rtab === 'out' }" @click="rtab='out'">出库汇总</div>
+          <div class="tab" :class="{ active: rtab === 'alert' }" @click="rtab='alert'">库存预警</div>
+        </div>
+        <div class="card" v-if="rtab === 'in'">
+          <div class="card-title">近14天入库趋势</div>
+          <div class="chart">
+            <div v-for="v in [65,72,58,86,92,78,65,80,95,88,76,82,70,60]" :key="v" class="bar" :style="{height: v + '%'}"></div>
+          </div>
+          <div class="chart-labels">
+            <span v-for="d in ['4/14','4/15','4/16','4/17','4/18','4/19','4/20','4/21','4/22','4/23','4/24','4/25','4/26','4/27']" :key="d">{{ d }}</span>
+          </div>
+          <div style="display:flex;gap:32px;margin-top:20px;padding-top:16px;border-top:1px solid var(--border);">
+            <div><div style="color:var(--text-muted);font-size:12px;">总单数</div><div style="font-size:22px;font-weight:700;">156</div></div>
+            <div><div style="color:var(--text-muted);font-size:12px;">总数量</div><div style="font-size:22px;font-weight:700;">8,420</div></div>
+            <div><div style="color:var(--text-muted);font-size:12px;">总金额</div><div style="font-size:22px;font-weight:700;color:#e65100;">¥126,380</div></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+</div>
+
+<script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+<script>
+const { createApp, ref } = Vue
+createApp({
+  setup() {
+    const page = ref('dashboard')
+    const rtab = ref('in')
+    const navItems = [
+      { key: 'dashboard', icon: '▦', label: '工作台' },
+      { key: 'product', icon: '⊞', label: '商品管理' },
+      { key: 'purchase', icon: '↓', label: '采购入库' },
+      { key: 'purchase-create', icon: '+', label: '新建入库' },
+      { key: 'sales', icon: '↑', label: '销售出库' },
+      { key: 'inventory', icon: '☰', label: '库存管理' },
+      { key: 'stocktake', icon: '◎', label: '库存盘点' },
+      { key: 'report', icon: '▤', label: '统计报表' },
+    ]
+    const alerts = [
+      { name: '多肉拼盘', qty: 3, min: 30 },
+      { name: '陶瓷花盆（中号）', qty: 12, min: 50 },
+    ]
+    const products = [
+      { code: 'P-001', name: '绿萝盆栽', spec: '20cm 盆', unit: '盆', purchase: '8.00', sale: '18.00', min: 50 },
+      { code: 'P-002', name: '龟背竹', spec: '30cm 高', unit: '棵', purchase: '25.00', sale: '55.00', min: 20 },
+      { code: 'P-003', name: '天堂鸟', spec: '1.2m 高', unit: '棵', purchase: '60.00', sale: '128.00', min: 10 },
+      { code: 'P-004', name: '虎皮兰', spec: '40cm 高', unit: '盆', purchase: '15.00', sale: '35.00', min: 30 },
+      { code: 'P-005', name: '蝴蝶兰', spec: '双梗 带花苞', unit: '盆', purchase: '35.00', sale: '78.00', min: 20 },
+      { code: 'P-006', name: '多肉拼盘', spec: '混栽 8cm', unit: '盆', purchase: '12.00', sale: '28.00', min: 30 },
+      { code: 'P-007', name: '营养土 5L', spec: '5L 装', unit: '袋', purchase: '6.00', sale: '15.00', min: 100 },
+      { code: 'P-008', name: '陶瓷花盆', spec: '中号 白色', unit: '个', purchase: '10.00', sale: '25.00', min: 40 },
+    ]
+    const purchases = [
+      { no: 'PR-20260427-001', supplier: '广州绿植基地', warehouse: '主仓库', qty: 200, amt: '3,600', operator: '仓库老林', date: '2026-04-27', status: '已入库' },
+      { no: 'PR-20260427-002', supplier: '佛山花卉园艺场', warehouse: '二号仓库', qty: 150, amt: '2,250', operator: '仓库老林', date: '2026-04-27', status: '草稿' },
+    ]
+    const sales = [
+      { no: 'SO-20260427-001', customer: '天河花店', warehouse: '主仓库', qty: 50, amt: '1,100', salesman: '小芳', date: '2026-04-27', status: '已出库' },
+      { no: 'SO-20260427-002', customer: '白云区绿植租赁公司', warehouse: '主仓库', qty: 80, amt: '2,400', salesman: '小芳', date: '2026-04-27', status: '草稿' },
+    ]
+    const inventory = [
+      { code: 'P-001', name: '绿萝盆栽', warehouse: '主仓库', location: 'A-01-01', batch: 'B20260401', qty: 350, locked: 0 },
+      { code: 'P-002', name: '龟背竹', warehouse: '主仓库', location: 'A-02-01', batch: 'B20260401', qty: 45, locked: 5 },
+      { code: 'P-005', name: '蝴蝶兰', warehouse: '主仓库', location: 'A-02-02', batch: 'B20260402', qty: 80, locked: 0 },
+      { code: 'P-009', name: '多肉拼盘', warehouse: '主仓库', location: 'B-01-01', batch: 'B20260401', qty: 3, locked: 0 },
+    ]
+    const stocktakes = [
+      { no: 'CK-20260427-001', warehouse: '主仓库', type: '全盘', total: 156, diff: 3, operator: '仓库老王', status: '盘点中' },
+    ]
+    const createItems = [
+      { name: '绿萝盆栽', qty: 100, price: '8.00', amt: '800.00', batch: 'B20260401' },
+      { name: '蝴蝶兰', qty: 60, price: '35.00', amt: '2,100.00', batch: 'B20260402' },
+      { name: '营养土 5L', qty: 200, price: '6.00', amt: '1,200.00', batch: 'B20260403' },
+    ]
+    return { page, rtab, navItems, alerts, products, purchases, sales, inventory, stocktakes, createItems }
+  }
+}).mount('#app')
+</script>
+</body>
+</html>

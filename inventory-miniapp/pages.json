@@ -1,0 +1,57 @@
+{
+  "pages": [
+    {"path": "pages/login/login", "style": {"navigationBarTitleText": "登录", "navigationStyle": "custom"}},
+    {"path": "pages/home/home", "style": {"navigationBarTitleText": "工作台", "navigationStyle": "custom"}},
+    {"path": "pages/purchase/list", "style": {"navigationBarTitleText": "采购入库"}},
+    {"path": "pages/purchase/create", "style": {"navigationBarTitleText": "新建入库单"}},
+    {"path": "pages/purchase/detail", "style": {"navigationBarTitleText": "入库单详情"}},
+    {"path": "pages/sales/list", "style": {"navigationBarTitleText": "销售出库"}},
+    {"path": "pages/sales/create", "style": {"navigationBarTitleText": "新建出库单"}},
+    {"path": "pages/sales/detail", "style": {"navigationBarTitleText": "出库单详情"}},
+    {"path": "pages/inventory/query", "style": {"navigationBarTitleText": "库存查询"}},
+    {"path": "pages/stocktake/list", "style": {"navigationBarTitleText": "库存盘点"}},
+    {"path": "pages/stocktake/create", "style": {"navigationBarTitleText": "新建盘点"}},
+    {"path": "pages/stocktake/detail", "style": {"navigationBarTitleText": "盘点详情"}},
+    {"path": "pages/alert/list", "style": {"navigationBarTitleText": "库存预警"}},
+    {"path": "pages/profile/profile", "style": {"navigationBarTitleText": "我的", "navigationStyle": "custom"}},
+    {"path": "pages/transfer/list", "style": {"navigationBarTitleText": "库存调拨"}},
+    {"path": "pages/transfer/create", "style": {"navigationBarTitleText": "新建调拨"}},
+    {"path": "pages/transfer/detail", "style": {"navigationBarTitleText": "调拨详情"}},
+    {"path": "pages/product/list", "style": {"navigationBarTitleText": "商品列表"}},
+    {"path": "pages/inventory/log", "style": {"navigationBarTitleText": "库存流水"}}
+  ],
+  "globalStyle": {
+    "navigationBarTextStyle": "black",
+    "navigationBarTitleText": "进销存管理",
+    "navigationBarBackgroundColor": "#ffffff",
+    "backgroundColor": "#f5f7f5"
+  },
+  "tabBar": {
+    "color": "#999",
+    "selectedColor": "#2e7d32",
+    "borderStyle": "white",
+    "backgroundColor": "#ffffff",
+    "list": [
+      {
+        "pagePath": "pages/home/home",
+        "text": "首页"
+      },
+      {
+        "pagePath": "pages/purchase/list",
+        "text": "入库"
+      },
+      {
+        "pagePath": "pages/sales/list",
+        "text": "出库"
+      },
+      {
+        "pagePath": "pages/inventory/query",
+        "text": "库存"
+      },
+      {
+        "pagePath": "pages/profile/profile",
+        "text": "我的"
+      }
+    ]
+  }
+}

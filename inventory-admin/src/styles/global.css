@@ -1,0 +1,109 @@
+:root {
+  --green: #2e7d32;
+  --green-light: #e8f5e9;
+  --green-border: #c8e6c9;
+  --text: #333;
+  --text-secondary: #666;
+  --text-muted: #999;
+  --bg-page: #f5f7f5;
+  --bg-card: #fff;
+  --border: #e8ece8;
+  --shadow: 0 1px 4px rgba(0,0,0,0.06);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html, body, #app {
+  height: 100%;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+body { background-color: var(--bg-page); color: var(--text); font-size: 14px; }
+
+/* 页面标题 */
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+.page-header h2 {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text);
+  padding-bottom: 12px;
+  border-bottom: 2px solid var(--green);
+}
+
+/* 搜索区域 */
+.search-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+  padding: 16px 20px;
+  background: var(--bg-card);
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+}
+
+/* 表格容器 */
+.table-container {
+  background: var(--bg-card);
+  padding: 20px 24px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+}
+
+/* 详情卡片 */
+.detail-card {
+  background: var(--bg-card);
+  padding: 24px 28px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+}
+.detail-card h3 {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 2px solid var(--green-light);
+}
+
+/* Element Plus 主题覆盖 */
+.el-button--primary {
+  --el-button-bg-color: var(--green) !important;
+  --el-button-border-color: var(--green) !important;
+  --el-button-hover-bg-color: #1b5e20 !important;
+}
+.el-button--primary.is-plain {
+  --el-button-plain-bg-color: var(--green-light) !important;
+}
+.el-button:focus, .el-button:hover { border-color: var(--green) !important; }
+
+.el-input__wrapper:focus, .el-input__wrapper.is-focus { box-shadow: 0 0 0 1px var(--green) inset !important; }
+.el-select .el-input.is-focus .el-input__wrapper { box-shadow: 0 0 0 1px var(--green) inset !important; }
+
+.el-pagination.is-background .el-pager li.is-active { background-color: var(--green) !important; }
+
+.el-table--striped .el-table__body tr.el-table__row--striped td { background-color: #f8fbf8 !important; }
+.el-table th.el-table__cell { background-color: #f8faf8 !important; color: var(--text-muted) !important; font-weight: 600 !important; }
+
+.el-tag--success { --el-tag-bg-color: var(--green-light) !important; --el-tag-text-color: var(--green) !important; --el-tag-border-color: var(--green-border) !important; }
+
+.el-breadcrumb__inner { color: var(--text-muted) !important; font-size: 13px !important; }
+.el-breadcrumb__item:last-child .el-breadcrumb__inner { color: var(--text) !important; font-weight: 600 !important; }
+
+.el-card { border: 1px solid var(--border) !important; border-radius: 8px !important; box-shadow: var(--shadow) !important; }
+
+/* 滚动条 */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #ddd; border-radius: 3px; }

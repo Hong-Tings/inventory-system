@@ -1,0 +1,37 @@
+# Java
+inventory-server/target/
+inventory-server/*.jar
+*.class
+*.war
+*.log
+hs_err_pid*
+*.iml
+.idea/
+
+# Node
+inventory-admin/node_modules/
+inventory-admin/dist/
+inventory-miniapp/node_modules/
+inventory-miniapp/dist/
+inventory-miniapp/unpackage/
+*.tsbuildinfo
+
+# Environment
+.env
+.env.local
+.env.*.local
+application-dev.yml
+application-prod.yml
+
+# OS
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# Uploads
+uploads/
+
+# Misc
+*.log

@@ -1,0 +1,138 @@
+# 项目工作记录
+
+> 最后更新: 2026-04-27 (v2.0 完善版)
+> 项目: 进销存管理系统 (SpringBoot + Vue3 + UniApp)
+
+---
+
+## 一、项目结构
+
+```
+桌面/管理/
+├── 01-项目需求文档.md
+├── 02-开发文档.md
+├── 03-项目任务书.md
+├── 项目方案书-进销存管理系统.md
+├── WORK_RECORD.md
+├── sql/                              ← 数据库脚本
+│   ├── 01-schema.sql                 ← 21张表
+│   └── 02-seed-data.sql              ← 初始化数据
+├── inventory-server/                 ← SpringBoot 后端 (82个Java文件)
+├── inventory-admin/                  ← Vue3 管理后台 (18个页面)
+│   └── mockup/                       ← 独立效果图
+└── inventory-miniapp/                ← UniApp 小程序 (9个页面)
+```
+
+---
+
+## 二、进度状态
+
+### 已完成
+
+| 模块 | 进度 | 说明 |
+|------|------|------|
+| 项目文档 | 100% | 需求/开发/任务书/方案书/工作记录 |
+| 数据库 | 100% | 21张表 + 种子数据，已验证通过 |
+| 后端框架 | 100% | SpringBoot 3.2 + MyBatis-Plus + Sa-Token JWT + Knife4j |
+| 后端业务 | 100% | 入库库存更新、出库扣减、盘点调整、单号生成 |
+| 后端 API | 100% | 16个Controller，所有筛选参数已绑定 |
+| PC 后台 | 100% | 18个页面，含子菜单导航 |
+| 小程序 | 100% | 9个页面，可通过 tab 栏切换 |
+| 报表/预警 | 100% | 库存预警联查、报表基础聚合 |
+| 操作日志 | 100% | AOP 切面自动记录写操作 |
+| 效果图 | 100% | 后台+小程序独立HTML |
+
+### 已验证的核心链路
+
+登录 → 商品管理 → 采购入库 → 库存增加 → 销售出库 → 库存扣减 → 盘点 → 盈亏调整 → 库存流水追溯
+
+---
+
+## 三、已修复 Bug 清单
+
+| # | 问题 | 修复 |
+|---|------|------|
+| 1 | 列表查询筛选参数全为 null，搜索框失效 | 6个Controller补 @RequestParam |
+| 2 | 入库单列表/详情供应商/仓库/操作人为空 | Service中 enrichOrder() 联查名称 |
+| 3 | 入库单明细商品名称/编码不显示 | Service中 enrichItems() 联查 product 表 |
+| 4 | 入库/出库/盘点创建不返回 ID | 改为 return order.getId() |
+| 5 | 前端 `res.data.data.id` 应改为 `res.data.data` | 3个Form页面修复 |
+| 6 | 小程序盘点 `res.data.id` 取到 undefined | 改为 res.data |
+| 7 | 入库/出库 unitPrice 为 null 时 NPE | 加 null 判断 |
+| 8 | 分类树返回空 | 根节点匹配 null |
+| 9 | 盘点调整缺 warehouse_id | 补 setWarehouseId() |
+| 10 | 前端 params 发 undefined 字符串 | Axios 拦截器加参数清理 |
+| 11 | 缺少类型转换异常处理 | GlobalExceptionHandler 补充 |
+| 12 | 系统管理页面点击空白 | 加路由 /system → /system/user |
+| 13 | 侧边栏无子菜单 | 改为 el-sub-menu 支持展开 |
+| 14 | 操作日志无数据 | 接入 @Aspect 切面自动记录 |
+| 15 | 库存预警返回空列表 | 联查 product 表实现 |
+| 16 | 报表接口返回空数据 | 注入 InventoryService 查询 |
+| 17 | 仪表盘 alertCount = 0 | 改为取真实预警数量 |
+| 18 | 小程序 BASE_URL 硬编码 | 提取到独立的 config.js |
+| 19 | 入库/出库 submit 未记录 operatorId | Controller 加 StpUtil.getLoginId() |
+| 20 | 创建/盘点未设置 operatorId | 同上 |
+
+---
+
+## 四、尚未实现的功能
+
+| 功能 | 说明 | 状态 |
+|------|------|------|
+| 扫码录入 | 小程序未接 wx.scanCode | 待开发 |
+| Excel 导入导出 | EasyExcel 依赖已引入，接口未接 | 待开发 |
+| Docker 部署 | docker-compose.yml + Dockerfile | 待开发 |
+| HTTPS / Nginx | 生产必需 | 待开发 |
+| 单元测试 | 覆盖率 0% | 待开发 |
+| 权限按钮级别 | sys_permission表已建，后端无代码 | 待开发 |
+| 商品图片上传 | DB有字段，无上传接口 | 待开发 |
+
+---
+
+## 五、启动方式
+
+```bash
+# 1. 数据库（确保 MySQL 已启动，密码配置在 application.yml）
+mysql -u root -p < sql/01-schema.sql
+mysql -u root -p inventory < sql/02-seed-data.sql
+
+# 2. 后端
+cd inventory-server && mvn spring-boot:run
+# API 文档: http://localhost:8080/doc.html
+
+# 3. 管理后台
+cd inventory-admin && npm run dev
+# 访问: http://localhost:3000
+
+# 4. 小程序（先改 src/config.js 里的 BASE_URL）
+cd inventory-miniapp && npm run build:mp-weixin
+# 微信开发者工具导入 dist/build/mp-weixin
+```
+
+## 六、测试账号
+
+| 账号 | 密码 | 角色 |
+|------|------|------|
+| admin | 123456 | 系统管理员 |
+| warehouse | 123456 | 仓库管理员 |
+| sales | 123456 | 销售员 |
+
+## 七、技术选型
+
+| 层 | 技术 |
+|----|------|
+| 后端 | Java 17 + Spring Boot 3.2.5 + MyBatis-Plus 3.5.5 |
+| 认证 | Sa-Token 1.37 + JWT (无需 Redis) |
+| 数据库 | MySQL 8.0 |
+| PC 后台 | Vue 3.4 + TypeScript + Element Plus + Pinia |
+| 小程序 | UniApp 3.x + Vue 3 + Pinia |
+| 工具 | Hutool 5.8, EasyExcel 3.3 |
+
+## 八、关键决策记录
+
+| 决策 | 原因 |
+|------|------|
+| 移除 Redis | 开发环境无 Redis，JWT 模式不依赖 |
+| 操作日志用 AOP 切面 | 无侵入，自动记录 Controller 写操作 |
+| 关联名称用 Service 层 enrich | 避免复杂 XML JOIN，保持 MyBatis-Plus 简洁 |
+| 分类树用 Java 内存构建 | 数据量小，避免递归 SQL |

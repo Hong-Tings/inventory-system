@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>进销存管理 - 小程序效果图</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'PingFang SC','Helvetica Neue',sans-serif;background:#f0f0f0;display:flex;justify-content:center;min-height:100vh;padding:20px}
+.phone{width:375px;background:#fff;border-radius:32px;box-shadow:0 4px 24px rgba(0,0,0,0.12);overflow:hidden}
+.phone-bar{height:40px;background:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;color:#999;border-bottom:1px solid #eee}
+.phone-header{height:44px;background:#fff;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:600;position:relative;border-bottom:1px solid #eee}
+.phone-header .back{position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:14px;color:#333;cursor:pointer}
+.phone-body{height:620px;overflow-y:auto;background:#f5f7f5}
+.phone-body::-webkit-scrollbar{display:none}
+.page{padding:12px}
+.page-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.page-bar h2{font-size:16px;font-weight:600;color:#333}
+.btn-add{background:#2e7d32;color:#fff;border:none;border-radius:4px;padding:6px 14px;font-size:13px}
+.btn-add.r{background:#c62828}
+.tab-bar{display:flex;border-top:1px solid #eee;background:#fff;padding:4px 0}
+.tab-item{flex:1;text-align:center;padding:4px 0;font-size:11px;color:#999;cursor:pointer}
+.tab-item .ti{font-size:20px;display:block;margin-bottom:1px}
+.tab-item.on{color:#2e7d32}
+.list-item{background:#fff;border-radius:8px;padding:14px 16px;margin-bottom:10px;box-shadow:0 1px 3px rgba(0,0,0,0.04);cursor:pointer}
+.li-top{display:flex;justify-content:space-between;margin-bottom:6px}
+.li-no{font-weight:600;font-size:14px}
+.li-st{font-size:11px;padding:2px 8px;border-radius:3px}
+.li-st.cnf{background:#e8f5e9;color:#2e7d32}
+.li-st.dft{background:#f5f5f5;color:#999}
+.li-bd{font-size:13px;color:#666;line-height:1.7}
+.li-bd .m{color:#999}
+.form-sec{background:#fff;border-radius:8px;padding:16px;margin-bottom:10px}
+.form-sec h3{font-size:14px;font-weight:600;margin-bottom:12px;color:#333}
+.fld{margin-bottom:12px}
+.fld .l{font-size:13px;color:#999;margin-bottom:4px}
+.fld .v{border:1px solid #e0e0e0;border-radius:6px;padding:10px 12px;font-size:14px;background:#fff}
+.it-card{background:#f8faf8;border-radius:6px;padding:12px;margin-bottom:8px}
+.it-card .icn{font-weight:600;font-size:14px;margin-bottom:8px}
+.it-row{display:flex;gap:8px}
+.it-row>div{flex:1}
+.it-row>div .l{font-size:11px;color:#999}
+.it-row>div .v{font-weight:600;font-size:14px}
+.it-row input{width:100%;border:1px solid #e0e0e0;border-radius:4px;padding:6px;text-align:center;font-size:14px}
+.sr{display:flex;gap:8px;margin-bottom:12px}
+.sr input{flex:1;border:1px solid #e0e0e0;border-radius:6px;padding:9px 12px;font-size:14px;background:#fff}
+.sr .ft{border:1px solid #e0e0e0;border-radius:6px;padding:9px 12px;white-space:nowrap;background:#fff;font-size:13px;color:#666}
+.ir{display:flex;justify-content:space-between;align-items:center}
+.ii .in{font-weight:600;font-size:14px}
+.ii .im{font-size:12px;color:#999;margin-top:2px}
+.iq{font-size:20px;font-weight:700;color:#2e7d32}
+.iq.lw{color:#c62828}
+.br{bottom:0;padding:12px;background:#fff;border-top:1px solid #eee}
+.br button{width:100%;height:42px;border:none;border-radius:6px;font-size:15px;font-weight:600;color:#fff;background:#2e7d32}
+.gr2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
+.scd{background:#fff;border-radius:8px;padding:16px;text-align:center}
+.scd .n{font-size:24px;font-weight:700;color:#2e7d32}
+.scd .l{font-size:12px;color:#999;margin-top:4px}
+.hd{background:#fff;padding:20px 16px;margin-bottom:10px;text-align:center}
+.hd .no{font-size:18px;font-weight:700}
+.hd .st{display:inline-block;margin-top:6px;font-size:12px;padding:3px 14px;border-radius:12px;background:#e8f5e9;color:#2e7d32}
+.ig{background:#fff;border-radius:8px;padding:16px;margin-bottom:10px}
+.ig .r{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #f0f0f0;font-size:14px}
+.ig .r:last-child{border-bottom:none}
+.ig .l{color:#999}
+.ig .v{font-weight:500;color:#333}
+.pl{background:#fff;border-radius:8px;padding:16px;margin-bottom:10px}
+.pl .t{font-size:14px;font-weight:600;margin-bottom:10px;color:#333}
+.pl .i{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #f5f5f5;font-size:13px}
+.pl .i:last-child{border-bottom:none}
+.pl .n{font-weight:500}
+.pl .d{color:#666}
+.pl .a{color:#e65100;font-weight:600}
+</style>
+</head>
+<body>
+<div class="phone" id="app">
+  <div class="phone-bar">9:41</div>
+  <div class="phone-header">
+    <span class="back" v-show="tab !== 'login'" @click="goBack">‹ 返回</span>
+    <span>{{ title }}</span>
+  </div>
+  <div class="phone-body">
+
+    <!-- 登录 -->
+    <div v-if="tab === 'login'" style="background:#fff;min-height:620px;display:flex;flex-direction:column;align-items:center;padding:80px 32px 40px;">
+      <div style="width:56px;height:56px;border-radius:14px;background:#2e7d32;color:#fff;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700;margin:0 auto 16px;">存</div>
+      <h1 style="font-size:22px;font-weight:700;text-align:center;color:#333;">进销存管理</h1>
+      <p style="text-align:center;font-size:13px;color:#999;margin-bottom:40px;">采购 · 销售 · 库存 · 盘点</p>
+      <div style="width:100%;">
+        <div style="margin-bottom:14px;"><input placeholder="用户名" value="admin" style="width:100%;height:44px;border:1px solid #e0e0e0;border-radius:8px;padding:0 14px;font-size:15px;outline:none;box-sizing:border-box" /></div>
+        <div style="margin-bottom:14px;"><input placeholder="密码" type="password" value="123456" style="width:100%;height:44px;border:1px solid #e0e0e0;border-radius:8px;padding:0 14px;font-size:15px;outline:none;box-sizing:border-box" /></div>
+        <button @click="tab='home'" style="width:100%;height:44px;background:#2e7d32;color:#fff;border:none;border-radius:8px;font-size:16px;font-weight:600;cursor:pointer;">登录</button>
+        <div style="text-align:center;font-size:12px;color:#ccc;margin-top:12px;">admin / 123456</div>
+      </div>
+    </div>
+
+    <!-- ============ 首页 Tab ============ -->
+    <div class="page" v-if="tab === 'home'">
+      <div class="page-bar"><h2>工作台</h2><span style="color:#999;font-size:13px;">管理员</span></div>
+      <div class="gr2">
+        <div class="scd"><div class="n">1,286</div><div class="l">商品总数</div></div>
+        <div class="scd"><div class="n">24</div><div class="l">今日入库</div></div>
+        <div class="scd"><div class="n">18</div><div class="l">今日出库</div></div>
+        <div class="scd"><div class="n" style="color:#e65100;">3</div><div class="l">库存预警</div></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+        <div style="background:#fff;border-radius:8px;padding:16px;text-align:center;cursor:pointer" @click="switchTab('purchase')"><div style="font-size:24px;">↓</div><div style="font-size:13px;margin-top:6px;color:#333;">采购入库</div></div>
+        <div style="background:#fff;border-radius:8px;padding:16px;text-align:center;cursor:pointer" @click="switchTab('sales')"><div style="font-size:24px;">↑</div><div style="font-size:13px;margin-top:6px;color:#333;">销售出库</div></div>
+        <div style="background:#fff;border-radius:8px;padding:16px;text-align:center;cursor:pointer" @click="switchTab('inventory')"><div style="font-size:24px;">≡</div><div style="font-size:13px;margin-top:6px;color:#333;">库存查询</div></div>
+        <div style="background:#fff;border-radius:8px;padding:16px;text-align:center;cursor:pointer" @click="switchTab('pstock')"><div style="font-size:24px;">⊙</div><div style="font-size:13px;margin-top:6px;color:#333;">库存盘点</div></div>
+      </div>
+      <div class="list-item" style="padding:12px 16px;cursor:pointer" @click="sub='alert'">
+        <div style="display:flex;justify-content:space-between;">
+          <span style="font-weight:600;font-size:14px;">⚠ 库存预警</span>
+          <span style="color:#c62828;font-weight:600;">3项</span>
+        </div>
+        <div style="font-size:12px;color:#999;margin-top:4px;">多肉拼盘、蝴蝶兰、龟背竹库存不足</div>
+      </div>
+    </div>
+
+    <!-- 预警子页 -->
+    <div class="page" v-if="tab === 'home' && sub === 'alert'">
+      <div class="page-bar"><h2>库存预警</h2></div>
+      <div v-for="r in alerts" :key="r.n" style="background:#fff;border-radius:8px;padding:12px 16px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;border-left:3px solid #e65100;">
+        <div><div style="font-weight:600;font-size:14px;">{{ r.n }}</div><div style="font-size:12px;color:#999;">{{ r.loc }}</div></div>
+        <div style="color:#c62828;font-weight:700;font-size:16px;">{{ r.q }}</div>
+      </div>
+    </div>
+
+    <!-- ============ 入库 Tab ============ -->
+    <div class="page" v-if="tab === 'purchase' && !sub">
+      <div class="page-bar"><h2>采购入库</h2><button class="btn-add" @click="sub='create'">+ 新建</button></div>
+      <div class="list-item" v-for="(r,i) in purchases" :key="i" @click="sub='detail';sel=i">
+        <div class="li-top"><span class="li-no">{{ r.no }}</span><span class="li-st" :class="r.st === '已入库' ? 'cnf' : 'dft'">{{ r.st }}</span></div>
+        <div class="li-bd"><div><span class="m">供应商 </span>{{ r.sup }}</div><div><span class="m">仓库 </span>{{ r.wh }} · {{ r.q }}件 · ¥{{ r.amt }}</div><div><span class="m">{{ r.d }}</span></div></div>
+      </div>
+    </div>
+
+    <!-- 入库详情 -->
+    <div class="page" v-if="tab === 'purchase' && sub === 'detail'">
+      <div class="hd"><div class="no">{{ purchases[sel].no }}</div><div class="st">{{ purchases[sel].st }}</div></div>
+      <div class="ig"><div class="r"><span class="l">供应商</span><span class="v">{{ purchases[sel].sup }}</span></div><div class="r"><span class="l">仓库</span><span class="v">主仓库 · A-01-01</span></div><div class="r"><span class="l">入库日期</span><span class="v">{{ purchases[sel].d }}</span></div><div class="r"><span class="l">操作人</span><span class="v">仓库老王</span></div></div>
+      <div class="pl"><div class="t">商品明细（2项）</div><div class="i"><div><div class="n">绿萝盆栽</div><div class="d">100件 × ¥8.00</div></div><div class="a">¥800.00</div></div><div class="i"><div><div class="n">营养土 5L</div><div class="d">200件 × ¥6.00</div></div><div class="a">¥1,200.00</div></div><div style="display:flex;justify-content:space-between;padding:12px 0 0;font-weight:600;font-size:14px;border-top:1px solid #eee;margin-top:8px;"><span>合计</span><span style="color:#e65100;">¥2,000.00</span></div></div>
+    </div>
+
+    <!-- 新建入库 -->
+    <div class="page" v-if="tab === 'purchase' && sub === 'create'" style="padding-bottom:70px;">
+      <div class="form-sec"><h3>基本信息</h3><div class="fld"><div class="l">供应商</div><div class="v">广州绿植基地</div></div><div class="fld"><div class="l">仓库</div><div class="v">主仓库</div></div><div class="fld"><div class="l">库位</div><div class="v">A-01-01</div></div></div>
+      <div class="form-sec"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;"><h3 style="margin-bottom:0;">商品明细</h3><span style="color:#2e7d32;font-size:13px;cursor:pointer;">+ 添加</span></div>
+        <div class="it-card" v-for="r in items" :key="r.n"><div class="icn">{{ r.n }}</div><div class="it-row"><div><div class="l">数量</div><input :value="r.q" /></div><div><div class="l">单价</div><input :value="r.p" /></div><div><div class="l">金额</div><div class="v" style="color:#e65100;">¥{{ r.a }}</div></div></div></div>
+      </div>
+      <div class="br" style="position:sticky;bottom:0;"><button>确认入库</button></div>
+    </div>
+
+    <!-- ============ 出库 Tab ============ -->
+    <div class="page" v-if="tab === 'sales' && !sub">
+      <div class="page-bar"><h2>销售出库</h2><button class="btn-add r" @click="sub='screate'">+ 新建</button></div>
+      <div class="list-item" v-for="(r,i) in sales" :key="i" @click="sub='sdetail';sel=i">
+        <div class="li-top"><span class="li-no">{{ r.no }}</span><span class="li-st" :class="r.st === '已出库' ? 'cnf' : 'dft'">{{ r.st }}</span></div>
+        <div class="li-bd"><div><span class="m">客户 </span>{{ r.c }}</div><div><span class="m">仓库 </span>{{ r.wh }} · {{ r.q }}件 · ¥{{ r.amt }}</div></div>
+      </div>
+    </div>
+
+    <!-- 出库详情 -->
+    <div class="page" v-if="tab === 'sales' && sub === 'sdetail'">
+      <div class="hd"><div class="no">{{ sales[sel].no }}</div><div class="st">{{ sales[sel].st }}</div></div>
+      <div class="ig"><div class="r"><span class="l">客户</span><span class="v">{{ sales[sel].c }}</span></div><div class="r"><span class="l">仓库</span><span class="v">主仓库</span></div><div class="r"><span class="l">出库日期</span><span class="v">{{ sales[sel].d }}</span></div><div class="r"><span class="l">销售员</span><span class="v">小张</span></div></div>
+      <div class="pl"><div class="t">商品明细（1项）</div><div class="i"><div><div class="n">绿萝盆栽</div><div class="d">50件 × ¥18.00</div></div><div class="a">¥900.00</div></div><div style="display:flex;justify-content:space-between;padding:12px 0 0;font-weight:600;font-size:14px;border-top:1px solid #eee;margin-top:8px;"><span>合计</span><span style="color:#e65100;">¥900.00</span></div></div>
+    </div>
+
+    <!-- 新建出库 -->
+    <div class="page" v-if="tab === 'sales' && sub === 'screate'" style="padding-bottom:70px;">
+      <div class="form-sec"><h3>基本信息</h3><div class="fld"><div class="l">客户</div><div class="v">天河花店</div></div><div class="fld"><div class="l">仓库</div><div class="v">主仓库</div></div><div class="fld"><div class="l">销售员</div><div class="v">小张</div></div></div>
+      <div class="form-sec"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;"><h3 style="margin-bottom:0;">商品明细</h3><span style="color:#c62828;font-size:13px;cursor:pointer;">+ 添加</span></div>
+        <div class="it-card"><div class="icn">绿萝盆栽</div><div class="it-row"><div><div class="l">数量</div><input value="50" /></div><div><div class="l">售价</div><input value="18.00" /></div><div><div class="l">金额</div><div class="v" style="color:#e65100;">¥900.00</div></div></div></div>
+      </div>
+      <div class="br" style="position:sticky;bottom:0;"><button>确认出库</button></div>
+    </div>
+
+    <!-- ============ 库存 Tab ============ -->
+    <div class="page" v-if="tab === 'inventory'">
+      <div class="page-bar"><h2>库存查询</h2></div>
+      <div class="sr"><input placeholder="搜索商品" /><div class="ft">全仓库</div></div>
+      <div class="list-item" v-for="r in inv" :key="r.n" style="padding:12px 16px;">
+        <div class="ir"><div class="ii"><div class="in">{{ r.n }}</div><div class="im">{{ r.c }} · {{ r.wh }} · {{ r.loc }}</div></div><div class="iq" :class="{ lw: r.q <= 5 }">{{ r.q }}</div></div>
+      </div>
+    </div>
+
+    <!-- ============ 盘点 Tab ============ -->
+    <div class="page" v-if="tab === 'pstock' && !sub">
+      <div class="page-bar"><h2>库存盘点</h2><button class="btn-add" @click="sub='stcreate'">+ 新建</button></div>
+      <div class="list-item" style="cursor:pointer" @click="sub='stcreate'">
+        <div style="display:flex;justify-content:space-between;"><span style="font-weight:600;font-size:14px;">CK-20260427-001</span><span class="li-st cnf">主仓库</span></div>
+        <div class="li-bd"><div><span class="m">方式 </span>全盘</div><div><span class="m">差异 </span><span style="color:#c62828;font-weight:600;">2项</span></div></div>
+      </div>
+    </div>
+
+    <!-- 盘点录入 -->
+    <div class="page" v-if="tab === 'pstock' && sub === 'stcreate'" style="padding-bottom:70px;">
+      <div class="form-sec"><div class="fld"><div class="l">仓库</div><div class="v">主仓库</div></div></div>
+      <div style="background:#fff;border-radius:8px;padding:14px 16px;margin-bottom:8px;" v-for="r in takes" :key="r.n">
+        <div style="font-weight:600;font-size:14px;">{{ r.n }}</div><div style="font-size:12px;color:#999;">{{ r.loc }}</div>
+        <div style="display:flex;gap:16px;margin-top:10px;">
+          <div style="flex:1;text-align:center;"><div style="font-size:11px;color:#999;">账面</div><div style="font-size:18px;font-weight:700;">{{ r.b }}</div></div>
+          <div style="flex:1;text-align:center;"><div style="font-size:11px;color:#999;">实盘</div><input :value="r.a" style="width:60px;border:1px solid #ddd;border-radius:4px;padding:6px;text-align:center;font-size:16px;" /></div>
+          <div style="flex:1;text-align:center;"><div style="font-size:11px;color:#999;">差异</div><div style="font-size:18px;font-weight:700;color:#c62828;">{{ r.d > 0 ? '+' : '' }}{{ r.d }}</div></div>
+        </div>
+      </div>
+      <div class="br" style="position:sticky;bottom:0;"><button>完成盘点</button></div>
+    </div>
+
+    <!-- ============ 我的 Tab ============ -->
+    <div class="page" v-if="tab === 'mine'">
+      <div style="background:#fff;border-radius:8px;padding:20px 16px;margin-bottom:10px;text-align:center;">
+        <div style="width:56px;height:56px;border-radius:50%;background:#2e7d32;color:#fff;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700;margin:0 auto 10px;">管</div>
+        <div style="font-size:16px;font-weight:600;">管理员</div>
+        <div style="font-size:12px;color:#999;margin-top:4px;">系统管理员</div>
+      </div>
+      <div style="background:#fff;border-radius:8px;margin-bottom:10px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-bottom:1px solid #f5f5f5;font-size:14px;"><span>商品列表</span><span style="color:#ccc;">›</span></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-bottom:1px solid #f5f5f5;font-size:14px;"><span>库存预警</span><span style="color:#c62828;">3</span></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-bottom:1px solid #f5f5f5;font-size:14px;"><span>修改密码</span><span style="color:#ccc;">›</span></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:14px 16px;font-size:14px;"><span>关于系统</span><span style="color:#ccc;">›</span></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Tab Bar 底部导航 -->
+  <div class="tab-bar" v-if="tab !== 'login'">
+    <div class="tab-item" :class="{ on: tab === 'home' }" @click="switchTab('home')"><span class="ti">◫</span>首页</div>
+    <div class="tab-item" :class="{ on: tab === 'purchase' }" @click="switchTab('purchase')"><span class="ti">↓</span>入库</div>
+    <div class="tab-item" :class="{ on: tab === 'sales' }" @click="switchTab('sales')"><span class="ti">↑</span>出库</div>
+    <div class="tab-item" :class="{ on: tab === 'inventory' || tab === 'pstock' }" @click="switchTab('inventory')"><span class="ti">≡</span>库存</div>
+    <div class="tab-item" :class="{ on: tab === 'mine' }" @click="switchTab('mine')"><span class="ti">◎</span>我的</div>
+  </div>
+</div>
+
+<script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+<script>
+const { createApp, ref, computed } = Vue
+createApp({
+  setup() {
+    const tab = ref('login')
+    const sub = ref('')
+    const sel = ref(0)
+
+    const tt = { login:'进销存管理', home:'工作台', purchase:'采购入库', sales:'销售出库', inventory:'库存查询', pstock:'库存盘点', mine:'我的' }
+    const ts = { alert:'库存预警', detail:'入库详情', create:'新建入库', sdetail:'出库详情', screate:'新建出库', stcreate:'盘点录入' }
+    const title = computed(() => tab.value === 'login' ? '进销存管理' : sub.value ? ts[sub.value] || '' : tt[tab.value] || '')
+
+    function switchTab(t) {
+      tab.value = t
+      sub.value = ''
+    }
+    function goBack() {
+      if (sub.value) { sub.value = ''; return }
+      if (tab.value !== 'home') { tab.value = 'home' }
+    }
+
+    const alerts = [{ n:'多肉拼盘', loc:'主仓库 · B-01-01', q:'3 / 30' }, { n:'蝴蝶兰', loc:'主仓库 · A-02-02', q:'12 / 20' }, { n:'龟背竹', loc:'主仓库 · A-02-01', q:'8 / 20' }]
+    const purchases = [{ no:'PR-20260427-001', sup:'广州绿植基地', wh:'主仓库', q:200, amt:'3,600', d:'2026-04-27', st:'已入库' }, { no:'PR-20260427-002', sup:'佛山花卉园艺场', wh:'二号仓库', q:150, amt:'2,250', d:'2026-04-27', st:'草稿' }, { no:'PR-20260426-001', sup:'昆明鲜花批发中心', wh:'主仓库', q:300, amt:'5,400', d:'2026-04-26', st:'已入库' }]
+    const sales = [{ no:'SO-20260427-001', c:'天河花店', wh:'主仓库', q:50, amt:'1,100', d:'2026-04-27', st:'已出库' }, { no:'SO-20260427-002', c:'白云区绿植租赁公司', wh:'主仓库', q:80, amt:'2,400', d:'2026-04-27', st:'草稿' }]
+    const inv = [{ n:'绿萝盆栽', c:'P-001', wh:'主仓库', loc:'A-01-01', q:350 }, { n:'龟背竹', c:'P-002', wh:'主仓库', loc:'A-02-01', q:45 }, { n:'蝴蝶兰', c:'P-005', wh:'主仓库', loc:'A-02-02', q:80 }, { n:'多肉拼盘', c:'P-009', wh:'主仓库', loc:'B-01-01', q:3 }, { n:'营养土 5L', c:'P-015', wh:'二号仓库', loc:'A-01-01', q:500 }]
+    const items = [{ n:'绿萝盆栽', q:100, p:'8.00', a:'800.00' }, { n:'蝴蝶兰', q:60, p:'35.00', a:'2,100.00' }, { n:'营养土 5L', q:200, p:'6.00', a:'1,200.00' }]
+    const takes = [{ n:'绿萝盆栽', loc:'A-01-01', b:350, a:348, d:-2 }, { n:'多肉拼盘', loc:'B-01-01', b:3, a:5, d:2 }]
+
+    return { tab, sub, sel, title, switchTab, goBack, alerts, purchases, sales, inv, items, takes }
+  }
+}).mount('#app')
+</script>
+</body>
+</html>

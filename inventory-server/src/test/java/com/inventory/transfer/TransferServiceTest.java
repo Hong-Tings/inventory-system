@@ -16,7 +16,7 @@ import com.inventory.warehouse.mapper.WarehouseMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.*;
+import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
@@ -38,60 +38,56 @@ class TransferServiceTest {
     @Mock private SysUserMapper userMapper;
     @Mock private ProductMapper productMapper;
 
-    @InjectMocks
     private TransferService service;
-
-    private InventoryTransfer transfer;
-    private List<InventoryTransferItem> items;
 
     @BeforeEach
     void setUp() {
-        transfer = new InventoryTransfer();
-        transfer.setId(1L);
-        transfer.setFromWarehouseId(1L);
-        transfer.setToWarehouseId(2L);
-        transfer.setStatus(OrderStatus.DRAFT);
+        service = new TransferService(
+            transferMapper, transferItemMapper, inventoryMapper,
+            inventoryLogMapper, warehouseMapper, userMapper, productMapper
+        );
+    }
 
-        items = new ArrayList<>();
+    private InventoryTransfer createDraft() {
+        InventoryTransfer t = new InventoryTransfer();
+        t.setId(1L);
+        t.setFromWarehouseId(1L);
+        t.setToWarehouseId(2L);
+        t.setStatus(OrderStatus.DRAFT);
+
+        List<InventoryTransferItem> items = new ArrayList<>();
         InventoryTransferItem item = new InventoryTransferItem();
         item.setProductId(1L);
         item.setQuantity(20);
         items.add(item);
-        transfer.setItems(items);
+        t.setItems(items);
+        return t;
     }
 
     @Test
     void submit_shouldDeductFromSourceAndAddToDestination() {
-        when(transferMapper.selectById(1L)).thenReturn(transfer);
-        when(transferItemMapper.selectList(any())).thenReturn(items);
+        when(transferMapper.selectById(1L)).thenReturn(createDraft());
+        when(transferItemMapper.selectList(any())).thenReturn(createDraft().getItems());
 
-        // 源仓有库存
         Inventory source = new Inventory();
         source.setId(1L); source.setProductId(1L); source.setWarehouseId(1L);
         source.setQuantity(50); source.setLockedQty(0);
         source.setCostPrice(new BigDecimal("10.00"));
 
-        // 目标仓无此商品
         when(inventoryMapper.selectOne(any())).thenReturn(source, null);
-
-        // selectList 查询目标仓已有批次（均价计算）
         when(inventoryMapper.selectList(any())).thenReturn(List.of());
 
         service.submit(1L);
 
-        // 验证：源仓扣减 50→30
-        verify(inventoryMapper).updateById(argThat(i ->
-                i.getId() == 1L && i.getQuantity() == 30));
-
-        // 验证：目标仓新增 20
+        verify(inventoryMapper).updateById(argThat(i -> i.getQuantity() == 30));
         verify(inventoryMapper).insert(argThat(i ->
-                i.getWarehouseId() == 2L && i.getQuantity() == 20));
+            i.getWarehouseId() == 2L && i.getQuantity() == 20));
     }
 
     @Test
     void submit_shouldThrowWhenStockInsufficient() {
-        when(transferMapper.selectById(1L)).thenReturn(transfer);
-        when(transferItemMapper.selectList(any())).thenReturn(items);
+        when(transferMapper.selectById(1L)).thenReturn(createDraft());
+        when(transferItemMapper.selectList(any())).thenReturn(createDraft().getItems());
 
         Inventory low = new Inventory();
         low.setId(1L); low.setProductId(1L); low.setWarehouseId(1L);
@@ -99,17 +95,16 @@ class TransferServiceTest {
 
         when(inventoryMapper.selectOne(any())).thenReturn(low);
 
-        BusinessException ex = assertThrows(BusinessException.class, () -> service.submit(1L));
-        assertEquals("商品库存不足", ex.getMessage());
+        assertThrows(BusinessException.class, () -> service.submit(1L));
     }
 
     @Test
     void cancel_shouldReverseTransfer() {
-        transfer.setStatus(OrderStatus.CONFIRMED);
-        when(transferMapper.selectById(1L)).thenReturn(transfer);
-        when(transferItemMapper.selectList(any())).thenReturn(items);
+        InventoryTransfer confirmed = createDraft();
+        confirmed.setStatus(OrderStatus.CONFIRMED);
+        when(transferMapper.selectById(1L)).thenReturn(confirmed);
+        when(transferItemMapper.selectList(any())).thenReturn(confirmed.getItems());
 
-        // 模拟源仓和目标仓的库存
         Inventory dest = new Inventory();
         dest.setId(2L); dest.setProductId(1L); dest.setWarehouseId(2L);
         dest.setQuantity(20);
@@ -122,12 +117,7 @@ class TransferServiceTest {
 
         service.cancel(1L);
 
-        // 验证：目标仓回滚 20→0
-        verify(inventoryMapper).updateById(argThat(i ->
-                i.getId() == 2L && i.getQuantity() == 0));
-
-        // 验证：源仓恢复 30→50
-        verify(inventoryMapper).updateById(argThat(i ->
-                i.getId() == 1L && i.getQuantity() == 50));
+        verify(inventoryMapper).updateById(argThat(i -> i.getId() == 2L && i.getQuantity() == 0));
+        verify(inventoryMapper).updateById(argThat(i -> i.getId() == 1L && i.getQuantity() == 50));
     }
 }

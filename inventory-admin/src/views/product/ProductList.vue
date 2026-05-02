@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, reactive, watch } from 'vue'
-import request from '../../api/request'
+import request, { downloadFile } from '../../api/request'
 import type { Product, PageResult, PageParams, Warehouse } from '../../types/api'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useRouter } from 'vue-router'
@@ -121,13 +121,14 @@ async function handleSave() {
 
 async function handleToggleStatus(row: Product) {
   const newStatus = row.status === 1 ? 0 : 1
+  try { await ElMessageBox.confirm(`确定${newStatus === 0 ? '停用' : '启用'}商品「${row.name}」？`, '确认操作', { type: 'warning' }) } catch { return }
   await request.put(`/product/${row.id}`, { ...row, status: newStatus })
   ElMessage.success(newStatus === 1 ? '已启用' : '已停用')
   fetchData()
 }
 
 function handleExport() {
-  window.open('/api/v1/product/export', '_blank')
+  downloadFile('/product/export', '商品管理.xlsx')
 }
 
 async function handleDelete(row: Product) {
@@ -337,7 +338,7 @@ onMounted(async () => { const r = await request.get('/warehouse/list'); warehous
           :total="total"
           layout="total, sizes, prev, pager, next"
           @current-change="handlePageChange"
-          @size-change="fetchData"
+          @size-change="query.page = 1; fetchData()"
         />
       </div>
     </div>

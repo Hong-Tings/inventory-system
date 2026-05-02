@@ -3,7 +3,7 @@ import { ref, onMounted, reactive, watch, computed } from 'vue'
 import request from '../../api/request'
 import type { Warehouse, Customer, Product } from '../../types/api'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { useRoute, useRouter } from 'vue-router'
+import { useRoute, useRouter, onBeforeRouteLeave } from 'vue-router'
 
 const router = useRouter()
 const route = useRoute()
@@ -16,6 +16,8 @@ const products = ref<Product[]>([])
 const batchInventory = ref<Record<number, Array<{batchNo: string; quantity: number}>>>({})
 const productStock = ref<Record<number, number>>({})
 const warehouseStock = ref<Record<number, number>>({})
+const dirty = ref(false)
+const saved = ref(false)
 
 const selectedCustomer = computed(() =>
   customers.value.find(c => c.id === form.customerId)
@@ -124,12 +126,19 @@ async function handleSave() {
       await request.post('/sales-order', form)
       ElMessage.success('保存成功（草稿）')
     }
-    router.push('/sales')
+    saved.value = true; router.push('/sales')
   } finally { submitting.value = false }
 }
 
 async function handleSubmit() {
   if (!form.warehouseId || form.items.length === 0) { ElMessage.warning('请填写完整信息'); return }
+  for (let i = 0; i < form.items.length; i++) {
+    const item = form.items[i]
+    if (!item.productId) { ElMessage.warning(`第 ${i + 1} 行请选择商品`); return }
+    if (!item.quantity || item.quantity <= 0) { ElMessage.warning(`第 ${i + 1} 行数量必须大于0`); return }
+    if (item.unitPrice == null || item.unitPrice < 0) { ElMessage.warning(`第 ${i + 1} 行请输入有效售价`); return }
+  }
+  try { await ElMessageBox.confirm(`确认出库？共 ${form.items.length} 种商品，总金额 ¥${form.items.reduce((s, i) => s + (i.amount || 0), 0).toFixed(2)}`, '确认出库', { type: 'warning' }) } catch { return }
   submitting.value = true
   try {
     let id = orderId.value
@@ -140,9 +149,16 @@ async function handleSubmit() {
       id = res.data.data
     }
     await request.put(`/sales-order/${id}/submit`)
-    ElMessage.success('出库成功'); router.push('/sales')
+    ElMessage.success('出库成功'); saved.value = true; router.push('/sales')
   } finally { submitting.value = false }
 }
+
+onBeforeRouteLeave(async (to, from, next) => {
+  if (!dirty.value || saved.value) { next(); return }
+  try { await ElMessageBox.confirm('表单尚未保存，确定离开？', '未保存的更改', { type: 'warning' }); next() } catch { next(false) }
+})
+
+watch(form, () => { if (!saved.value) dirty.value = true }, { deep: true })
 
 watch(() => form.warehouseId, async (whId) => {
   if (whId) {

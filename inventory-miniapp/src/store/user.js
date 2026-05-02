@@ -12,7 +12,7 @@ export const useUserStore = defineStore('user', {
   },
   actions: {
     async login(username, password) {
-      const res = await request.post('/auth/login', { username, password })
+      const res = await request.post('/auth/login', { username, password, rememberMe: true })
       this.token = res.data.token
       this.userInfo = res.data
       uni.setStorageSync('token', res.data.token)

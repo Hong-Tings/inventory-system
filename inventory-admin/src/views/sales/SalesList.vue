@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, reactive } from 'vue'
-import request from '../../api/request'
+import request, { downloadFile } from '../../api/request'
 import type { SalesOrder, PageResult, PageParams } from '../../types/api'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useRouter } from 'vue-router'
@@ -68,7 +68,7 @@ async function handleBatchDelete() {
     ElMessage.success('已作废'); selectedIds.value = []; fetchData()
   } catch {}
 }
-function handleExport() { window.open('/api/v1/sales-order/export', '_blank') }
+function handleExport() { downloadFile('/sales-order/export', '销售出库.xlsx') }
 function getSummaries(param: { columns: any[]; data: any[] }) {
   const { columns, data } = param
   const sums: string[] = []
@@ -152,7 +152,7 @@ onMounted(async () => {
           </template>
         </el-table-column>
       </el-table>
-      <el-pagination v-model:page-size="query.size" :total="total" layout="total, sizes, prev, pager, next" style="margin-top:16px;justify-content:flex-end" @current-change="query.page = $event; fetchData()" @size-change="fetchData" />
+      <el-pagination v-model:page-size="query.size" :total="total" layout="total, sizes, prev, pager, next" style="margin-top:16px;justify-content:flex-end" @current-change="query.page = $event; fetchData()" @size-change="query.page = 1; fetchData()" />
     </div>
   </div>
 </template>

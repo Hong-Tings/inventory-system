@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, reactive, computed } from 'vue'
 import { useRouter } from 'vue-router'
-import request from '../../api/request'
+import request, { downloadFile } from '../../api/request'
 import type { Warehouse, PageParams } from '../../types/api'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useUserStore } from '../../store/user'
@@ -59,7 +59,7 @@ async function handleBatchToggle(status: number) {
   ElMessage.success(`已${status === 1 ? '启用' : '停用'} ${selectedIds.value.length} 个仓库`)
   selectedIds.value = []; fetchData()
 }
-function handleExport() { window.open('/api/v1/warehouse/export', '_blank') }
+function handleExport() { downloadFile('/warehouse/export', '仓库.xlsx') }
 onMounted(fetchData)
 </script>
 
@@ -122,7 +122,7 @@ onMounted(fetchData)
           </template>
         </el-table-column>
       </el-table>
-      <el-pagination v-model:page-size="query.size" :total="total" layout="total, sizes, prev, pager, next" style="margin-top:16px;justify-content:flex-end" @current-change="query.page = $event; fetchData()" @size-change="fetchData" />
+      <el-pagination v-model:page-size="query.size" :total="total" layout="total, sizes, prev, pager, next" style="margin-top:16px;justify-content:flex-end" @current-change="query.page = $event; fetchData()" @size-change="query.page = 1; fetchData()" />
     </div>
 
     <el-dialog v-model="dialogVisible" :title="form.id ? '编辑仓库' : '新增仓库'" width="520px">

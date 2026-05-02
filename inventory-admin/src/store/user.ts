@@ -10,8 +10,8 @@ export const useUserStore = defineStore('user', () => {
   const isLoggedIn = computed(() => !!token.value)
   const isAdmin = computed(() => userInfo.value?.isAdmin === true)
 
-  async function login(username: string, password: string) {
-    const res = await request.post('/auth/login', { username, password })
+  async function login(username: string, password: string, rememberMe?: boolean) {
+    const res = await request.post('/auth/login', { username, password, rememberMe: !!rememberMe })
     const data = res.data.data as UserInfo
     token.value = data.token
     userInfo.value = data

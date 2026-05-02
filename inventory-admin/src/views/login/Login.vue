@@ -6,7 +6,7 @@ import { ElMessage } from 'element-plus'
 
 const router = useRouter()
 const userStore = useUserStore()
-const form = ref({ username: '', password: '' })
+const form = ref({ username: '', password: '', rememberMe: false })
 const loading = ref(false)
 const inputFocused = ref(false)
 
@@ -57,20 +57,37 @@ function animateLeaves() {
   animId = requestAnimationFrame(animateLeaves)
 }
 
-onMounted(() => {
-  window.addEventListener('mousemove', onMouseMove)
-  spawnLeaves()
-  animateLeaves()
-})
 onUnmounted(() => {
   window.removeEventListener('mousemove', onMouseMove)
   cancelAnimationFrame(animId)
 })
 
+// 从 localStorage 恢复记住的账号
+onMounted(() => {
+  const saved = localStorage.getItem('rememberedUser')
+  if (saved) {
+    try {
+      const { username, password } = JSON.parse(saved)
+      form.value.username = username
+      form.value.password = password
+      form.value.rememberMe = true
+    } catch {}
+  }
+  window.addEventListener('mousemove', onMouseMove)
+  spawnLeaves()
+  animateLeaves()
+})
+
 function handleLogin() {
   if (!form.value.username || !form.value.password) { ElMessage.warning('请输入用户名和密码'); return }
   loading.value = true
-  userStore.login(form.value.username, form.value.password).then(() => {
+  // 记住密码：保存到 localStorage；取消勾选则清除
+  if (form.value.rememberMe) {
+    localStorage.setItem('rememberedUser', JSON.stringify({ username: form.value.username, password: form.value.password }))
+  } else {
+    localStorage.removeItem('rememberedUser')
+  }
+  userStore.login(form.value.username, form.value.password, form.value.rememberMe).then(() => {
     ElMessage.success('登录成功')
     router.push('/')
   }).catch(() => {}).finally(() => { loading.value = false })
@@ -156,6 +173,11 @@ function handleLogin() {
             <el-icon class="input-icon"><Lock /></el-icon>
             <el-input v-model="form.password" type="password" placeholder="请输入密码" size="large" show-password
               @focus="inputFocused = true" @blur="inputFocused = false" />
+          </div>
+        </el-form-item>
+        <el-form-item>
+          <div style="display:flex;justify-content:space-between;align-items:center;width:100%;">
+            <el-checkbox v-model="form.rememberMe">记住密码</el-checkbox>
           </div>
         </el-form-item>
         <el-form-item>

@@ -306,7 +306,11 @@ public class PurchaseOrderService {
                 Inventory inv = inventoryMapper.selectOne(wrapper);
                 if (inv != null) {
                     int beforeQty = inv.getQuantity();
-                    inv.setQuantity(beforeQty - item.getQuantity());
+                    int afterQty = beforeQty - item.getQuantity();
+                    if (afterQty < 0) {
+                        throw new BusinessException("商品库存不足，无法取消入库（当前库存: " + beforeQty + "，需扣减: " + item.getQuantity() + "）");
+                    }
+                    inv.setQuantity(afterQty);
                     inventoryMapper.updateById(inv);
 
                     // 取消后重新计算加权平均成本价 = (原总金额 - 取消批次金额) ÷ 剩余总数量

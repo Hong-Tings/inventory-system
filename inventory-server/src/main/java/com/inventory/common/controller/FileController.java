@@ -37,7 +37,7 @@ public class FileController {
             return R.fail("上传文件为空");
         }
         String ext = FileUtil.extName(file.getOriginalFilename());
-        if (ext == null || !"jpg,jpeg,png,gif".contains(ext.toLowerCase())) {
+        if (ext == null || !java.util.Set.of("jpg", "jpeg", "png", "gif").contains(ext.toLowerCase())) {
             return R.fail("仅支持 jpg/png/gif 格式");
         }
         try {

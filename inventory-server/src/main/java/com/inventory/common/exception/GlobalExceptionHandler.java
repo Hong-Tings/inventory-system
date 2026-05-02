@@ -2,6 +2,7 @@ package com.inventory.common.exception;
 
 import cn.dev33.satoken.exception.NotLoginException;
 import cn.dev33.satoken.exception.NotPermissionException;
+import cn.dev33.satoken.exception.NotRoleException;
 import com.inventory.common.result.R;
 import org.springframework.beans.TypeMismatchException;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -27,6 +28,11 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(NotPermissionException.class)
     public R<Void> handleNotPermission(NotPermissionException e) {
         return R.forbidden("无权限访问");
+    }
+
+    @ExceptionHandler(NotRoleException.class)
+    public R<Void> handleNotRole(NotRoleException e) {
+        return R.forbidden("权限不足，无法执行此操作");
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)

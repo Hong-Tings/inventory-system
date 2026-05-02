@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, reactive, computed } from 'vue'
-import request from '../../api/request'
+import request, { downloadFile } from '../../api/request'
 import type { Inventory, PageParams, Warehouse } from '../../types/api'
 import { useRouter } from 'vue-router'
 
@@ -28,7 +28,7 @@ async function fetchWarehouses() {
 
 function handleSearch() { query.page = 1; fetchData() }
 function handleReset() { query.productName = ''; query.warehouseId = undefined; handleSearch() }
-function handleExport() { window.open('/api/v1/inventory/export', '_blank') }
+function handleExport() { downloadFile('/inventory/export', '库存查询.xlsx') }
 
 // 按仓库分组
 const grouped = computed(() => {

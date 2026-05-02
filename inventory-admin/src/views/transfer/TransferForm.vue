@@ -3,7 +3,7 @@ import { ref, onMounted, reactive, watch } from 'vue'
 import request from '../../api/request'
 import type { Warehouse, Product } from '../../types/api'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { useRoute, useRouter } from 'vue-router'
+import { useRoute, useRouter, onBeforeRouteLeave } from 'vue-router'
 
 const router = useRouter()
 const route = useRoute()
@@ -14,6 +14,8 @@ const submitting = ref(false)
 const warehouses = ref<Warehouse[]>([])
 const products = ref<Product[]>([])
 const warehouseStock = ref<Record<number, number>>({})
+const dirty = ref(false)
+const saved = ref(false)
 
 const form = reactive({
   outWarehouseId: undefined as number | undefined,
@@ -87,7 +89,7 @@ async function handleSave() {
       await request.post('/transfer', form)
       ElMessage.success('保存成功（草稿）')
     }
-    router.push('/transfer')
+    saved.value = true; router.push('/transfer')
   } finally { submitting.value = false }
 }
 
@@ -100,6 +102,11 @@ async function handleSubmit() {
     ElMessage.warning('调出仓库和调入仓库不能相同')
     return
   }
+  for (let i = 0; i < form.items.length; i++) {
+    if (!form.items[i].productId) { ElMessage.warning(`第 ${i + 1} 行请选择商品`); return }
+    if (!form.items[i].quantity || form.items[i].quantity <= 0) { ElMessage.warning(`第 ${i + 1} 行数量必须大于0`); return }
+  }
+  try { await ElMessageBox.confirm(`确认调拨？共 ${form.items.length} 种商品。`, '确认调拨', { type: 'warning' }) } catch { return }
   submitting.value = true
   try {
     let id = orderId.value
@@ -111,9 +118,16 @@ async function handleSubmit() {
     }
     await request.put(`/transfer/${id}/submit`)
     ElMessage.success('调拨成功')
-    router.push('/transfer')
+    saved.value = true; router.push('/transfer')
   } finally { submitting.value = false }
 }
+
+onBeforeRouteLeave(async (to, from, next) => {
+  if (!dirty.value || saved.value) { next(); return }
+  try { await ElMessageBox.confirm('表单尚未保存，确定离开？', '未保存的更改', { type: 'warning' }); next() } catch { next(false) }
+})
+
+watch(form, () => { if (!saved.value) dirty.value = true }, { deep: true })
 
 onMounted(async () => {
   await fetchBaseData()

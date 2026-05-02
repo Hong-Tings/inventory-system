@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, reactive } from 'vue'
-import request from '../../api/request'
+import request, { downloadFile } from '../../api/request'
 import type { PurchaseOrder, PageResult, PageParams, Supplier, Warehouse } from '../../types/api'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useRouter } from 'vue-router'
@@ -68,7 +68,7 @@ async function handleBatchDelete() {
 }
 async function fetchSuppliers() { const res = await request.get('/supplier/list'); suppliers.value = res.data.data }
 async function fetchWarehouses() { const res = await request.get('/warehouse/list'); warehouses.value = res.data.data }
-function handleExport() { window.open('/api/v1/purchase-order/export', '_blank') }
+function handleExport() { downloadFile('/purchase-order/export', '采购入库.xlsx') }
 function getSummaries(param: { columns: any[]; data: any[] }) {
   const { columns, data } = param
   const sums: string[] = []
@@ -143,7 +143,7 @@ onMounted(() => { fetchData(); fetchSuppliers(); fetchWarehouses() })
           </template>
         </el-table-column>
       </el-table>
-      <el-pagination v-model:page-size="query.size" :total="total" layout="total, sizes, prev, pager, next" style="margin-top:16px;justify-content:flex-end" @current-change="query.page = $event; fetchData()" @size-change="fetchData" />
+      <el-pagination v-model:page-size="query.size" :total="total" layout="total, sizes, prev, pager, next" style="margin-top:16px;justify-content:flex-end" @current-change="query.page = $event; fetchData()" @size-change="query.page = 1; fetchData()" />
     </div>
   </div>
 </template>

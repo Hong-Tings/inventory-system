@@ -3,7 +3,7 @@ import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import request from '../../api/request'
 import type { SalesOrder } from '../../types/api'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 
 const route = useRoute()
 const router = useRouter()
@@ -17,9 +17,15 @@ async function fetchDetail() {
   try {
     const res = await request.get(`/sales-order/${route.params.id}`)
     order.value = res.data.data
+  } catch {
+    ElMessage.error('获取出库单详情失败')
+    order.value = null
   } finally { loading.value = false }
 }
-async function handleCancel() { await request.put(`/sales-order/${route.params.id}/cancel`); ElMessage.success('已取消'); fetchDetail() }
+async function handleCancel() {
+  try { await ElMessageBox.confirm('确定取消此出库单？取消后库存将回退，不可恢复。', '确认取消', { type: 'warning' }) } catch { return }
+  await request.put(`/sales-order/${route.params.id}/cancel`); ElMessage.success('已取消'); fetchDetail()
+}
 onMounted(fetchDetail)
 </script>
 

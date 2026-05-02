@@ -25,6 +25,9 @@ async function fetchDetail() {
   try {
     const res = await request.get(`/stock-take/${route.params.id}`)
     order.value = res.data.data
+  } catch {
+    ElMessage.error('获取盘点单详情失败')
+    order.value = null
   } finally { loading.value = false }
 }
 
@@ -74,11 +77,13 @@ function handleUpdateActual(item: any) {
 }
 
 async function handleApprove() {
+  try { await ElMessageBox.confirm('确认审核通过此盘点单？审核后不可修改实盘数。', '确认审核', { type: 'warning' }) } catch { return }
   await request.put(`/stock-take/${route.params.id}/approve`)
   ElMessage.success('已审核'); fetchDetail()
 }
 
 async function handleAdjust() {
+  try { await ElMessageBox.confirm('确认执行库存调整？调整后库存将根据差异自动变更。', '确认调整', { type: 'warning' }) } catch { return }
   await request.put(`/stock-take/${route.params.id}/adjust`)
   ElMessage.success('盘点调整已完成'); fetchDetail()
 }

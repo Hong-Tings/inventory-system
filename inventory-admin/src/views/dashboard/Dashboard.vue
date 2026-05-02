@@ -5,6 +5,7 @@ import { useRouter } from 'vue-router'
 import * as echarts from 'echarts'
 
 const router = useRouter()
+const loading = ref(true)
 const stats = ref({
   productCount: 0, warehouseCount: 0,
   todayPurchaseCount: 0, todaySalesCount: 0,
@@ -122,11 +123,12 @@ onMounted(async () => {
     renderChart(chartPurchaseCum.value, '本月累计入库', cumData.value.days, cumData.value.inCum, '#2e7d32')
     renderChart(chartSalesCum.value, '本月累计出库', cumData.value.days, cumData.value.outCum, '#e65100')
   })
+  loading.value = false
 })
 </script>
 
 <template>
-  <div>
+  <div v-loading="loading">
     <h2 style="margin-bottom:20px;border:none;padding:0;">工作台</h2>
 
     <!-- 顶部统计 -->

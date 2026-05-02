@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, reactive } from 'vue'
-import request from '../../api/request'
+import request, { downloadFile } from '../../api/request'
 import type { InventoryLog as InventoryLogType, PageResult, PageParams, Warehouse } from '../../types/api'
 
 const loading = ref(false)
@@ -56,7 +56,7 @@ function handleSearch() {
 }
 
 function handleExport() {
-  window.open('/api/v1/inventory/log/export', '_blank')
+  downloadFile('/inventory/log/export', '库存流水.xlsx')
 }
 
 onMounted(() => {
@@ -108,7 +108,7 @@ onMounted(() => {
         <el-table-column prop="operatorName" label="操作人" width="100" />
       </el-table>
       <el-pagination v-model:page-size="query.size" :total="total" layout="total, sizes, prev, pager, next" style="margin-top:16px;justify-content:flex-end"
-        @current-change="query.page = $event; fetchData()" @size-change="fetchData" />
+        @current-change="query.page = $event; fetchData()" @size-change="query.page = 1; fetchData()" />
     </div>
   </div>
 </template>

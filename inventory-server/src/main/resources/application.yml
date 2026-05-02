@@ -38,7 +38,7 @@ sa-token:
   is-read-header: true
   timeout: 86400
   active-timeout: 1800
-  is-concurrent: true
+  is-concurrent: false
   is-share: false
 
 springdoc:

@@ -388,6 +388,9 @@ public class TransferService {
                 if (inv != null) {
                     int beforeQty = inv.getQuantity();
                     int afterQty = beforeQty - item.getQuantity();
+                    if (afterQty < 0) {
+                        throw new BusinessException("目标仓库库存不足，无法取消调拨（当前库存: " + beforeQty + "，需扣减: " + item.getQuantity() + "）");
+                    }
                     inv.setQuantity(afterQty);
                     inventoryMapper.updateById(inv);
 

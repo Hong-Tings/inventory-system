@@ -2,7 +2,7 @@
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import request from '../../api/request'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 
 const route = useRoute()
 const router = useRouter()
@@ -20,19 +20,22 @@ async function fetchDetail() {
   try {
     const res = await request.get(`/transfer/${route.params.id}`)
     order.value = res.data.data
+  } catch {
+    ElMessage.error('获取调拨单详情失败')
+    order.value = null
   } finally { loading.value = false }
 }
 
 async function handleSubmit() {
+  try { await ElMessageBox.confirm('确认执行调拨？调拨后库存将立即变更。', '确认调拨', { type: 'warning' }) } catch { return }
   await request.put(`/transfer/${route.params.id}/submit`)
-  ElMessage.success('已调拨')
-  fetchDetail()
+  ElMessage.success('已调拨'); fetchDetail()
 }
 
 async function handleCancel() {
+  try { await ElMessageBox.confirm('确定取消此调拨单？', '确认取消', { type: 'warning' }) } catch { return }
   await request.put(`/transfer/${route.params.id}/cancel`)
-  ElMessage.success('已取消')
-  fetchDetail()
+  ElMessage.success('已取消'); fetchDetail()
 }
 
 onMounted(fetchDetail)

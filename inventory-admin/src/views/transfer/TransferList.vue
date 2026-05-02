@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, reactive } from 'vue'
-import request from '../../api/request'
+import request, { downloadFile } from '../../api/request'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '../../store/user'
@@ -82,7 +82,7 @@ async function handleBatchDelete() {
   } catch {}
 }
 function handleExport() {
-  window.open('/api/v1/transfer/export', '_blank')
+  downloadFile('/transfer/export', '库存调拨.xlsx')
 }
 onMounted(async () => {
   const wRes = await request.get('/warehouse/list')
@@ -144,7 +144,7 @@ onMounted(async () => {
           </template>
         </el-table-column>
       </el-table>
-      <el-pagination v-model:page-size="query.size" :total="total" layout="total, sizes, prev, pager, next" style="margin-top:16px;justify-content:flex-end" @current-change="query.page = $event; fetchData()" @size-change="fetchData" />
+      <el-pagination v-model:page-size="query.size" :total="total" layout="total, sizes, prev, pager, next" style="margin-top:16px;justify-content:flex-end" @current-change="query.page = $event; fetchData()" @size-change="query.page = 1; fetchData()" />
     </div>
   </div>
 </template>

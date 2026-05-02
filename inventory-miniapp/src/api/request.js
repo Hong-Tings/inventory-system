@@ -40,6 +40,11 @@ function request(method, url, data, params) {
           reject(new Error(result.message || '未登录'))
           return
         }
+        if (result.code === 403) {
+          uni.showToast({ title: '权限不足', icon: 'none' })
+          reject(new Error(result.message || '权限不足'))
+          return
+        }
         if (result.code !== 200) {
           uni.showToast({ title: result.message || '请求失败', icon: 'none' })
           reject(new Error(result.message))

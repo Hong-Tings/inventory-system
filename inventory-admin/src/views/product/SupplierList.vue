@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, reactive } from 'vue'
-import request from '../../api/request'
+import request, { downloadFile } from '../../api/request'
 import type { Supplier, PageResult, PageParams } from '../../types/api'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useUserStore } from '../../store/user'
@@ -23,7 +23,7 @@ async function fetchData() {
 }
 function handleSearch() { query.page = 1; fetchData() }
 function handleReset() { query.name = ''; query.contact = ''; query.phone = ''; query.address = ''; handleSearch() }
-function handleExport() { window.open('/api/v1/supplier/export', '_blank') }
+function handleExport() { downloadFile('/supplier/export', '供应商.xlsx') }
 async function handleDelete(row: Supplier) {
   try {
     await ElMessageBox.confirm(`确定作废供应商「${row.name}」？`, '确认作废', { type: 'warning' })
@@ -71,7 +71,7 @@ onMounted(fetchData)
           </template>
         </el-table-column>
       </el-table>
-      <el-pagination v-model:page-size="query.size" :total="total" layout="total, sizes, prev, pager, next" style="margin-top:16px;justify-content:flex-end" @current-change="query.page = $event; fetchData()" @size-change="fetchData" />
+      <el-pagination v-model:page-size="query.size" :total="total" layout="total, sizes, prev, pager, next" style="margin-top:16px;justify-content:flex-end" @current-change="query.page = $event; fetchData()" @size-change="query.page = 1; fetchData()" />
     </div>
     <el-dialog v-model="dialogVisible" :title="(form as any).id ? '编辑供应商' : '新增供应商'" width="500px">
       <el-form :model="form" label-width="80px">

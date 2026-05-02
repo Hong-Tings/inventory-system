@@ -55,7 +55,7 @@ onMounted(fetchData)
         <el-table-column prop="detail" label="详情" min-width="220" />
         <el-table-column prop="ip" label="IP地址" width="140" />
       </el-table>
-      <el-pagination v-model:page-size="query.size" :total="total" layout="total, sizes, prev, pager, next" style="margin-top:16px;justify-content:flex-end" @current-change="query.page = $event; fetchData()" @size-change="fetchData" />
+      <el-pagination v-model:page-size="query.size" :total="total" layout="total, sizes, prev, pager, next" style="margin-top:16px;justify-content:flex-end" @current-change="query.page = $event; fetchData()" @size-change="query.page = 1; fetchData()" />
     </div>
   </div>
 </template>

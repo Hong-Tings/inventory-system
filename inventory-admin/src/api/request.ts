@@ -45,10 +45,27 @@ request.interceptors.response.use(
       const userStore = useUserStore()
       userStore.logout()
       window.location.href = '/login'
+      return Promise.reject(error)
+    }
+    if (error.response?.status === 403) {
+      ElMessage.error('权限不足，无法执行此操作')
+      return Promise.reject(error)
     }
     ElMessage.error(error.message || '网络错误')
     return Promise.reject(error)
   },
 )
+
+export async function downloadFile(url: string, filename: string) {
+  try {
+    const res = await request.get(url, { responseType: 'blob' })
+    const blob = new Blob([res.data])
+    const a = document.createElement('a')
+    a.href = URL.createObjectURL(blob)
+    a.download = filename
+    a.click()
+    URL.revokeObjectURL(a.href)
+  } catch { /* handled by interceptor */ }
+}
 
 export default request

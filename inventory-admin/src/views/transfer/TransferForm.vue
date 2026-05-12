@@ -108,7 +108,7 @@ async function handleSubmit() {
     if (!form.items[i].productId) { ElMessage.warning(`第 ${i + 1} 行请选择商品`); return }
     if (!form.items[i].quantity || form.items[i].quantity <= 0) { ElMessage.warning(`第 ${i + 1} 行数量必须大于0`); return }
   }
-  try { await ElMessageBox.confirm(`确认调拨？共 ${form.items.length} 种商品。`, '确认调拨', { type: 'warning' }) } catch { return }
+  try { await ElMessageBox.confirm(`确认调拨？共 ${form.items.length} 种商品。\n\n提交后将进入审批状态，请联系管理员审批通过。`, '确认调拨', { type: 'warning' }) } catch { return }
   submitting.value = true
   try {
     let id = orderId.value

@@ -81,7 +81,6 @@ public class StockTakeController {
         return R.ok();
     }
 
-    @SaCheckRole("role_1")
     @Operation(summary = "审核盘点单")
     @PutMapping("/{id}/approve")
     public R<Void> approve(@PathVariable Long id) {

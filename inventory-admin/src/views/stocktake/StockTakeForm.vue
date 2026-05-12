@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, reactive } from 'vue'
 import request from '../../api/request'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
@@ -26,6 +26,7 @@ function disabledDate(time: Date) {
 
 async function handleCreate() {
   if (!form.warehouseId) { ElMessage.warning('请选择仓库'); return }
+  try { await ElMessageBox.confirm('创建后将进入盘点中状态，审核后方可调整库存。', '确认创建', { type: 'info' }) } catch { return }
   submitting.value = true
   try {
     const res = await request.post('/stock-take', form)

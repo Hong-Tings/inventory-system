@@ -135,7 +135,7 @@ async function handleSubmit() {
     if (!item.quantity || item.quantity <= 0) { ElMessage.warning(`第 ${i + 1} 行数量必须大于0`); return }
     if (item.unitPrice == null || item.unitPrice < 0) { ElMessage.warning(`第 ${i + 1} 行请输入有效单价`); return }
   }
-  try { await ElMessageBox.confirm(`确认入库？共 ${form.items.length} 种商品，总金额 ¥${form.items.reduce((s, i) => s + (i.amount || 0), 0).toFixed(2)}`, '确认入库', { type: 'warning' }) } catch { return }
+  try { await ElMessageBox.confirm(`确认入库？共 ${form.items.length} 种商品，总金额 ¥${form.items.reduce((s, i) => s + (i.amount || 0), 0).toFixed(2)}\n\n提交后将进入审批状态，请联系管理员审批通过。`, '确认入库', { type: 'warning' }) } catch { return }
   submitting.value = true
   try {
     let id = orderId.value

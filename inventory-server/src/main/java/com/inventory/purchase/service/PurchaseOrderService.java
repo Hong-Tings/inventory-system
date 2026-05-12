@@ -300,7 +300,12 @@ public class PurchaseOrderService {
         if (order.getStatus() == OrderStatus.CANCELED) throw new BusinessException("采购单已取消");
 
         if (order.getStatus() == OrderStatus.PENDING) {
-            // 待审批状态直接取消，无需回滚库存
+            // 待审批状态仅管理员可取消
+            long uid = cn.dev33.satoken.stp.StpUtil.getLoginIdAsLong();
+            SysUser u = userMapper.selectById(uid);
+            if (u == null || u.getRole() == null || u.getRole() != 1) {
+                throw new BusinessException("待审批状态仅管理员可取消");
+            }
             order.setStatus(OrderStatus.CANCELED);
             purchaseOrderMapper.updateById(order);
             return;

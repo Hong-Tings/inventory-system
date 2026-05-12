@@ -140,22 +140,22 @@ onMounted(async () => {
       </div>
       <el-table :data="list" v-loading="loading" stripe border @selection-change="(rows: any[]) => selectedIds = rows.map((r: any) => r.id)">
         <el-table-column type="selection" width="45" />
-        <el-table-column prop="orderNo" label="调拨单号" width="180" />
-        <el-table-column prop="fromWarehouseName" label="调出仓库" width="140" />
-        <el-table-column prop="toWarehouseName" label="调入仓库" width="140" />
+        <el-table-column prop="orderNo" label="调拨单号" width="150" />
+        <el-table-column prop="fromWarehouseName" label="调出仓库" width="120" />
+        <el-table-column prop="toWarehouseName" label="调入仓库" width="120" />
         <el-table-column prop="totalQuantity" label="数量" sortable width="80" />
-        <el-table-column prop="operatorName" label="操作人" width="100" />
-        <el-table-column prop="orderDate" label="调拨日期" width="110" />
-        <el-table-column prop="remark" label="备注" min-width="160" show-overflow-tooltip />
+        <el-table-column prop="operatorName" label="操作人" width="80" />
+        <el-table-column prop="orderDate" label="日期" width="90" />
+        <el-table-column prop="remark" label="备注" min-width="130" show-overflow-tooltip />
         <el-table-column label="创建时间" width="150">
           <template #default="{ row }">{{ row.createTime ? row.createTime.substring(0, 16) : '-' }}</template>
         </el-table-column>
-        <el-table-column prop="status" label="状态" width="90">
+        <el-table-column prop="status" label="状态" width="80">
           <template #default="{ row }">
             <el-tag :type="statusMap[row.status]?.type as any">{{ statusMap[row.status]?.label }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="220" fixed="right">
+        <el-table-column label="操作" width="320" fixed="right">
           <template #default="{ row }">
             <el-button size="small" @click="router.push(`/transfer/${row.id}`)">详情</el-button>
             <el-button v-if="row.status === 0" size="small" @click="router.push(`/transfer/create?edit=${row.id}`)">编辑</el-button>

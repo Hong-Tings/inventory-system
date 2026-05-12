@@ -56,15 +56,15 @@ onMounted(fetchData)
     <div class="table-container">
       <el-table :data="list" v-loading="loading" stripe border>
         <el-table-column prop="code" label="编码" width="150" />
-        <el-table-column prop="name" label="名称" min-width="180" />
-        <el-table-column prop="contact" label="联系人" width="120" />
-        <el-table-column prop="phone" label="电话" width="140" />
+        <el-table-column prop="name" label="名称" min-width="150" />
+        <el-table-column prop="contact" label="联系人" width="80" />
+        <el-table-column prop="phone" label="电话" width="120" />
         <el-table-column prop="address" label="地址" min-width="200" />
-        <el-table-column prop="remark" label="备注" min-width="160" show-overflow-tooltip />
+        <el-table-column prop="remark" label="备注" min-width="130" show-overflow-tooltip />
         <el-table-column prop="createTime" label="新增时间" width="170" sortable>
           <template #default="{ row }">{{ row.createTime ? row.createTime.substring(0, 16) : '-' }}</template>
         </el-table-column>
-        <el-table-column label="操作" width="190" fixed="right">
+        <el-table-column label="操作" width="250" fixed="right">
           <template #default="{ row }">
             <el-button size="small" @click="openEdit(row)">编辑</el-button>
             <el-button v-if="userStore.isAdmin" size="small" type="danger" @click="handleDelete(row)">作废</el-button>

@@ -267,15 +267,15 @@ onMounted(async () => { const r = await request.get('/warehouse/list'); warehous
       <el-table :data="products" v-loading="loading" stripe border @selection-change="(rows: any[]) => selectedIds = rows.map(r => r.id)">
         <el-table-column type="selection" width="40" />
         <el-table-column prop="code" label="编码" width="150" />
-        <el-table-column label="图片" width="90">
+        <el-table-column label="图片" width="80">
           <template #default="{ row }">
             <el-image v-if="row.imageUrl" :src="row.imageUrl" style="width:50px;height:50px;border-radius:4px;cursor:pointer" fit="cover" :preview-src-list="[row.imageUrl]" preview-teleported />
             <span v-else style="color:#ccc">-</span>
           </template>
         </el-table-column>
         <el-table-column prop="name" label="名称" min-width="130" />
-        <el-table-column prop="spec" label="规格" width="120" />
-        <el-table-column label="条码" width="90" align="center">
+        <el-table-column prop="spec" label="规格" width="80" />
+        <el-table-column label="条码" width="80" align="center">
           <template #default="{ row }">
             <el-image
               v-if="barcodePreviews[row.id]"
@@ -296,26 +296,26 @@ onMounted(async () => { const r = await request.get('/warehouse/list'); warehous
           </template>
         </el-table-column>
         <el-table-column prop="unit" label="单位" width="80" />
-        <el-table-column prop="categoryName" label="分类" width="100" />
-        <el-table-column prop="purchasePrice" label="采购价" sortable width="100">
+        <el-table-column prop="categoryName" label="分类" width="80" />
+        <el-table-column prop="purchasePrice" label="采购价" sortable width="80">
           <template #default="{ row }">¥{{ row.purchasePrice }}</template>
         </el-table-column>
-        <el-table-column prop="salePrice" label="销售价" sortable width="100">
+        <el-table-column prop="salePrice" label="销售价" sortable width="80">
           <template #default="{ row }">¥{{ row.salePrice }}</template>
         </el-table-column>
-        <el-table-column prop="inventoryQuantity" label="当前库存" sortable width="100">
+        <el-table-column prop="inventoryQuantity" label="当前库存" sortable width="80">
           <template #default="{ row }">
             <span :style="{ color: row.inventoryQuantity != null && row.inventoryQuantity <= (row.minStock || 0) ? '#c62828' : '#2e7d32', fontWeight: 600 }">{{ row.inventoryQuantity ?? '-' }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="minStock" label="最低库存" sortable width="90" />
-        <el-table-column label="库存状态" width="100">
+        <el-table-column prop="minStock" label="最低库存" sortable width="80" />
+        <el-table-column label="库存状态" width="80">
           <template #default="{ row }">
             <el-tag v-if="row.alertStatus === 'warning'" type="danger" size="small">预警</el-tag>
             <el-tag v-else type="success" size="small">正常</el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="createTime" label="新增时间" sortable width="160">
+        <el-table-column prop="createTime" label="新增时间" sortable width="130">
           <template #default="{ row }">{{ row.createTime ? row.createTime.slice(0,16) : '-' }}</template>
         </el-table-column>
         <el-table-column prop="status" label="状态" sortable width="70">
@@ -323,7 +323,7 @@ onMounted(async () => { const r = await request.get('/warehouse/list'); warehous
             <el-tag :type="row.status === 1 ? 'success' : 'info'" size="small">{{ row.status === 1 ? '启用' : '停用' }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="220" fixed="right">
+        <el-table-column label="操作" width="280" fixed="right">
           <template #default="{ row }">
             <el-button size="small" @click="openEdit(row)">编辑</el-button>
             <el-button size="small" :type="row.status === 1 ? 'warning' : 'success'" @click="handleToggleStatus(row)">{{ row.status === 1 ? '停用' : '启用' }}</el-button>

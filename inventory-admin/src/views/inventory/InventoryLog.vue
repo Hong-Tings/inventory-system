@@ -101,21 +101,21 @@ onMounted(() => {
     </div>
     <div class="table-container">
       <el-table :data="list" v-loading="loading" stripe border>
-        <el-table-column prop="createTime" label="时间" width="180" sortable />
-        <el-table-column prop="productName" label="商品" min-width="160" />
-        <el-table-column prop="warehouseName" label="仓库" width="120" />
-        <el-table-column prop="changeType" label="类型" width="120">
+        <el-table-column prop="createTime" label="时间" width="150" sortable />
+        <el-table-column prop="productName" label="商品" min-width="130" />
+        <el-table-column prop="warehouseName" label="仓库" width="80" />
+        <el-table-column prop="changeType" label="类型" width="80">
           <template #default="{ row }">{{ changeTypeMap[row.changeType] || row.changeType }}</template>
         </el-table-column>
-        <el-table-column prop="changeQty" label="变动数量" width="100">
+        <el-table-column prop="changeQty" label="变动数量" width="80">
           <template #default="{ row }">
             <span :style="{ color: row.changeQty > 0 ? '#67c23a' : '#f56c6c' }">{{ row.changeQty > 0 ? '+' : '' }}{{ row.changeQty }}</span>
           </template>
         </el-table-column>
         <el-table-column prop="beforeQty" label="变动前" width="80" />
         <el-table-column prop="afterQty" label="变动后" width="80" />
-        <el-table-column prop="refOrderNo" label="关联单号" width="180" />
-        <el-table-column prop="operatorName" label="操作人" width="100" />
+        <el-table-column prop="refOrderNo" label="关联单号" width="150" />
+        <el-table-column prop="operatorName" label="操作人" width="80" />
       </el-table>
       <el-pagination v-model:page-size="query.size" :total="total" layout="total, sizes, prev, pager, next" style="margin-top:16px;justify-content:flex-end"
         @current-change="query.page = $event; fetchData()" @size-change="query.page = 1; fetchData()" />

@@ -145,23 +145,23 @@ onMounted(async () => {
       </div>
       <el-table :data="list" v-loading="loading" stripe border show-summary :summary-method="getSummaries" @selection-change="(rows: any[]) => selectedIds = rows.map(r => r.id)">
         <el-table-column type="selection" width="40" />
-        <el-table-column prop="orderNo" label="出库单号" width="180" />
-        <el-table-column prop="customerName" label="客户" width="160" />
-        <el-table-column prop="warehouseName" label="仓库" width="120" />
+        <el-table-column prop="orderNo" label="出库单号" width="150" />
+        <el-table-column prop="customerName" label="客户" width="130" />
+        <el-table-column prop="warehouseName" label="仓库" width="80" />
         <el-table-column prop="totalQuantity" label="总数量" sortable width="80" />
-        <el-table-column prop="totalAmount" label="总金额" sortable width="120">
+        <el-table-column prop="totalAmount" label="总金额" sortable width="80">
           <template #default="{ row }">¥{{ row.totalAmount?.toFixed(2) }}</template>
         </el-table-column>
-        <el-table-column prop="salesman" label="销售员" width="100" />
-        <el-table-column prop="orderDate" label="出库日期" sortable width="120" />
-        <el-table-column prop="remark" label="备注" min-width="160" show-overflow-tooltip />
-        <el-table-column prop="createTime" label="创建时间" sortable width="160">
+        <el-table-column prop="salesman" label="销售员" width="80" />
+        <el-table-column prop="orderDate" label="日期" sortable width="80" />
+        <el-table-column prop="remark" label="备注" min-width="130" show-overflow-tooltip />
+        <el-table-column prop="createTime" label="创建时间" sortable width="130">
           <template #default="{ row }">{{ row.createTime ? row.createTime.substring(0, 16) : '-' }}</template>
         </el-table-column>
-        <el-table-column prop="status" label="状态" width="90">
+        <el-table-column prop="status" label="状态" width="80">
           <template #default="{ row }"><el-tag :type="statusMap[row.status]?.type as any">{{ statusMap[row.status]?.label }}</el-tag></template>
         </el-table-column>
-        <el-table-column label="操作" width="260" fixed="right">
+        <el-table-column label="操作" width="320" fixed="right">
           <template #default="{ row }">
             <el-button size="small" @click="router.push(`/sales/${row.id}`)">详情</el-button>
             <el-button v-if="row.status === 0" size="small" @click="router.push(`/sales/create?edit=${row.id}`)">编辑</el-button>

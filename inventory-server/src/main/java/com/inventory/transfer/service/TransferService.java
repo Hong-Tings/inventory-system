@@ -393,6 +393,11 @@ public class TransferService {
         if (transfer.getStatus() == OrderStatus.CANCELED) throw new BusinessException("调拨单已取消");
 
         if (transfer.getStatus() == OrderStatus.PENDING) {
+            long uid = cn.dev33.satoken.stp.StpUtil.getLoginIdAsLong();
+            SysUser u = userMapper.selectById(uid);
+            if (u == null || u.getRole() == null || u.getRole() != 1) {
+                throw new BusinessException("待审批状态仅管理员可取消");
+            }
             transfer.setStatus(OrderStatus.CANCELED);
             transferMapper.updateById(transfer);
             return;

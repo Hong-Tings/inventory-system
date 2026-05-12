@@ -241,6 +241,11 @@ public class SalesOrderService {
         if (order == null) throw new BusinessException("销售单不存在");
         if (order.getStatus() == OrderStatus.CANCELED) throw new BusinessException("销售单已取消");
         if (order.getStatus() == OrderStatus.PENDING) {
+            long uid = cn.dev33.satoken.stp.StpUtil.getLoginIdAsLong();
+            var u = userMapper.selectById(uid);
+            if (u == null || u.getRole() == null || u.getRole() != 1) {
+                throw new BusinessException("待审批状态仅管理员可取消");
+            }
             order.setStatus(OrderStatus.CANCELED);
             salesOrderMapper.updateById(order);
             return;

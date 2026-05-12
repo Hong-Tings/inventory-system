@@ -167,12 +167,20 @@ public class SalesOrderService {
         SalesOrder order = salesOrderMapper.selectById(id);
         if (order == null) throw new BusinessException("销售单不存在");
         if (order.getStatus() != OrderStatus.DRAFT) throw new BusinessException("当前状态不可提交");
+        order.setStatus(OrderStatus.PENDING);
+        salesOrderMapper.updateById(order);
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    public synchronized void approve(Long id) {
+        SalesOrder order = salesOrderMapper.selectById(id);
+        if (order == null) throw new BusinessException("销售单不存在");
+        if (order.getStatus() != OrderStatus.PENDING) throw new BusinessException("当前状态不可审核");
 
         List<SalesOrderItem> items = salesOrderItemMapper.selectList(
                 new LambdaQueryWrapper<SalesOrderItem>().eq(SalesOrderItem::getOrderId, id));
 
         for (SalesOrderItem item : items) {
-            // 查询该商品在该仓库下的所有有库存的批次，按 ID 正序排列（先进先出）
             List<Inventory> batchList = inventoryMapper.selectList(
                     new LambdaQueryWrapper<Inventory>()
                             .eq(Inventory::getProductId, item.getProductId())
@@ -181,8 +189,6 @@ public class SalesOrderService {
                             .orderByAsc(Inventory::getId));
 
             int needQty = item.getQuantity();
-
-            // 验证总库存是否充足
             int totalAvailable = batchList.stream().mapToInt(Inventory::getQuantity).sum();
             if (totalAvailable < needQty) {
                 throw new BusinessException("商品库存不足");
@@ -190,13 +196,11 @@ public class SalesOrderService {
 
             for (Inventory batch : batchList) {
                 if (needQty <= 0) break;
-
                 int deductQty = Math.min(needQty, batch.getQuantity());
                 int beforeQty = batch.getQuantity();
                 batch.setQuantity(beforeQty - deductQty);
                 inventoryMapper.updateById(batch);
 
-                // 按批次记录库存流水
                 InventoryLog log = new InventoryLog();
                 log.setProductId(item.getProductId());
                 log.setWarehouseId(order.getWarehouseId());
@@ -213,11 +217,21 @@ public class SalesOrderService {
                 log.setOperatorId(order.getOperatorId());
                 log.setRemark("销售出库(FIFO)");
                 inventoryLogMapper.insert(log);
-
                 needQty -= deductQty;
             }
         }
+
         order.setStatus(OrderStatus.CONFIRMED);
+        salesOrderMapper.updateById(order);
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    public void reject(Long id, String reason) {
+        SalesOrder order = salesOrderMapper.selectById(id);
+        if (order == null) throw new BusinessException("销售单不存在");
+        if (order.getStatus() != OrderStatus.PENDING) throw new BusinessException("当前状态不可驳回");
+        order.setStatus(OrderStatus.DRAFT);
+        order.setRemark((order.getRemark() != null ? order.getRemark() + " | " : "") + "驳回原因: " + (reason != null ? reason : ""));
         salesOrderMapper.updateById(order);
     }
 
@@ -226,6 +240,11 @@ public class SalesOrderService {
         SalesOrder order = salesOrderMapper.selectById(id);
         if (order == null) throw new BusinessException("销售单不存在");
         if (order.getStatus() == OrderStatus.CANCELED) throw new BusinessException("销售单已取消");
+        if (order.getStatus() == OrderStatus.PENDING) {
+            order.setStatus(OrderStatus.CANCELED);
+            salesOrderMapper.updateById(order);
+            return;
+        }
         if (order.getStatus() == OrderStatus.CONFIRMED) {
             List<SalesOrderItem> items = salesOrderItemMapper.selectList(
                     new LambdaQueryWrapper<SalesOrderItem>().eq(SalesOrderItem::getOrderId, id));

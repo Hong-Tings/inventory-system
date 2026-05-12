@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, reactive, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import request, { downloadFile } from '../../api/request'
 import type { Inventory } from '../../types/api'
@@ -28,6 +28,11 @@ async function fetchWarehouseTree() {
   warehouseTree.value = res.data.data || []
 }
 
+// 展开状态追踪
+const expanded = reactive(new Set<number>())
+function toggle(id: number) { expanded.has(id) ? expanded.delete(id) : expanded.add(id) }
+function isExpanded(id: number) { return expanded.has(id) }
+
 function onWarehouseChange(val: number | undefined) {
   query.value.warehouseId = val
   handleSearch()
@@ -51,9 +56,9 @@ const invByWarehouse = computed(() => {
 function buildTreeWithStock(nodes: any[]): any[] {
   return nodes.map(n => {
     const invs = invByWarehouse.value.get(n.id) || []
-    const qty = invs.reduce((s, i: any) => s + (i.quantity || 0), 0)
-    const amt = invs.reduce((s, i: any) => s + ((i.costPrice || 0) * (i.quantity || 0)), 0)
-    const node = { ...n, _productCount: invs.length, _totalQty: qty, _totalAmt: amt }
+    const qty = invs.reduce((s: i: any) => s + (i.quantity || 0), 0)
+    const amt = invs.reduce((s: i: any) => s + ((i.costPrice || 0) * (i.quantity || 0)), 0)
+    const node = { ...n, _pc: invs.length, _qty: qty, _amt: amt }
     if (n.children?.length) {
       node.children = buildTreeWithStock(n.children)
     }
@@ -61,7 +66,19 @@ function buildTreeWithStock(nodes: any[]): any[] {
   })
 }
 
-const treeWithStock = computed(() => buildTreeWithStock(warehouseTree.value))
+// 展平树为列表，depth 用于缩进；跳过收起分支
+function flattenTree(nodes: any[], depth = 0): any[] {
+  const result: any[] = []
+  for (const n of nodes) {
+    result.push({ ...n, depth })
+    if (n.children?.length && isExpanded(n.id)) {
+      result.push(...flattenTree(n.children, depth + 1))
+    }
+  }
+  return result
+}
+
+const flatList = computed(() => flattenTree(buildTreeWithStock(warehouseTree.value)))
 
 // 合计
 const grandTotal = computed(() => {
@@ -99,89 +116,36 @@ onMounted(() => { fetchWarehouseTree(); fetchData() })
     </div>
 
     <div v-loading="loading">
-      <div v-if="!treeWithStock.length && !loading" style="text-align:center;padding:60px 0;color:#999;">暂无库存数据</div>
+      <div v-if="!flatList.length && !loading" style="text-align:center;padding:60px 0;color:#999;">暂无库存数据</div>
 
-      <div v-for="root in treeWithStock" :key="root.id" class="tree-root">
-        <div class="tree-node tree-level-1" @click="root._expanded = !root._expanded">
-          <span class="toggle-icon">{{ root._expanded ? '▼' : '▶' }}</span>
-          <span class="node-name">{{ root.name }}</span>
-          <el-tag size="small" type="primary">{{ root.level }}级</el-tag>
-          <span class="node-stats" v-if="root._productCount">{{ root._productCount }} 种 · {{ root._totalQty }} 件 · ¥{{ root._totalAmt.toFixed(2) }}</span>
+      <div v-for="node in flatList" :key="node.id" class="tree-row" :style="{ paddingLeft: (node.depth * 24 + 16) + 'px' }">
+        <div class="tree-node" :class="'level-' + node.level" @click="node.children?.length && toggle(node.id)">
+          <span v-if="node.children?.length" class="toggle-icon">{{ isExpanded(node.id) ? '▼' : '▶' }}</span>
+          <span v-else class="toggle-icon" style="visibility:hidden;">▶</span>
+          <span class="node-name">{{ node.name }}</span>
+          <el-tag size="small" :type="['primary','success','warning','info'][node.level-1] || 'info'">{{ node.level }}级</el-tag>
+          <span class="node-stats" v-if="node._pc">{{ node._pc }} 种 · {{ node._qty }} 件 · ¥{{ node._amt.toFixed(2) }}</span>
         </div>
-        <div v-show="root._expanded" style="padding-left:24px;">
-          <template v-for="child in root.children" :key="child.id">
-            <div v-if="child.children?.length" class="tree-node tree-level-2" @click="child._expanded = !child._expanded">
-              <span class="toggle-icon">{{ child._expanded ? '▼' : '▶' }}</span>
-              <span class="node-name">{{ child.name }}</span>
-              <el-tag size="small" type="success">{{ child.level }}级</el-tag>
-              <span class="node-stats" v-if="child._productCount">{{ child._productCount }} 种 · {{ child._totalQty }} 件 · ¥{{ child._totalAmt.toFixed(2) }}</span>
-            </div>
-            <div v-show="child._expanded || !child.children?.length" style="padding-left:24px;">
-              <template v-if="child.children?.length">
-                <div v-for="sub in child.children" :key="sub.id">
-                  <div v-if="sub.children?.length" class="tree-node tree-level-3" @click="sub._expanded = !sub._expanded">
-                    <span class="toggle-icon">{{ sub._expanded ? '▼' : '▶' }}</span>
-                    <span class="node-name">{{ sub.name }}</span>
-                    <el-tag size="small" type="warning">{{ sub.level }}级</el-tag>
-                    <span class="node-stats" v-if="sub._productCount">{{ sub._productCount }} 种 · {{ sub._totalQty }} 件 · ¥{{ sub._totalAmt.toFixed(2) }}</span>
-                  </div>
-                  <div v-show="sub._expanded || !sub.children?.length" style="padding-left:24px;">
-                    <div v-for="leaf in sub.children" :key="leaf.id">
-                      <div class="tree-node tree-level-4">
-                        <span class="node-name">{{ leaf.name }}</span>
-                        <el-tag size="small" type="info">{{ leaf.level }}级</el-tag>
-                        <span class="node-stats" v-if="leaf._productCount">{{ leaf._productCount }} 种 · {{ leaf._totalQty }} 件 · ¥{{ leaf._totalAmt.toFixed(2) }}</span>
-                      </div>
-                      <!-- 叶子节点展开显示实际库存 -->
-                      <div v-if="leaf._productCount" class="leaf-inventory">
-                        <el-table :data="invByWarehouse.get(leaf.id) || []" stripe border size="small">
-                          <el-table-column prop="productCode" label="编码" width="100" />
-                          <el-table-column prop="productName" label="商品" min-width="130" />
-                          <el-table-column prop="batchNo" label="批次" width="80" />
-                          <el-table-column prop="quantity" label="数量" width="70" align="center">
-                            <template #default="{ row }"><span style="font-weight:600;">{{ row.quantity }}</span></template>
-                          </el-table-column>
-                          <el-table-column label="均价" width="100" align="right">
-                            <template #default="{ row }">¥{{ (row.costPrice || 0).toFixed(2) }}</template>
-                          </el-table-column>
-                          <el-table-column label="金额" width="100" align="right">
-                            <template #default="{ row }">¥{{ ((row.costPrice || 0) * (row.quantity || 0)).toFixed(2) }}</template>
-                          </el-table-column>
-                        </el-table>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </template>
-              <template v-else>
-                <div class="tree-node tree-level-4">
-                  <span class="node-name">{{ child.name }}</span>
-                  <el-tag size="small" type="info">{{ child.level }}级</el-tag>
-                  <span class="node-stats" v-if="child._productCount">{{ child._productCount }} 种 · {{ child._totalQty }} 件 · ¥{{ child._totalAmt.toFixed(2) }}</span>
-                </div>
-                <div v-if="child._productCount" class="leaf-inventory">
-                  <el-table :data="invByWarehouse.get(child.id) || []" stripe border size="small">
-                    <el-table-column prop="productCode" label="编码" width="100" />
-                    <el-table-column prop="productName" label="商品" min-width="130" />
-                    <el-table-column prop="batchNo" label="批次" width="80" />
-                    <el-table-column prop="quantity" label="数量" width="70" align="center">
-                      <template #default="{ row }"><span style="font-weight:600;">{{ row.quantity }}</span></template>
-                    </el-table-column>
-                    <el-table-column label="均价" width="100" align="right">
-                      <template #default="{ row }">¥{{ (row.costPrice || 0).toFixed(2) }}</template>
-                    </el-table-column>
-                    <el-table-column label="金额" width="100" align="right">
-                      <template #default="{ row }">¥{{ ((row.costPrice || 0) * (row.quantity || 0)).toFixed(2) }}</template>
-                    </el-table-column>
-                  </el-table>
-                </div>
-              </template>
-            </div>
-          </template>
+        <!-- 叶子节点：展示库存表格 -->
+        <div v-if="!node.children?.length && node._pc" class="leaf-inventory">
+          <el-table :data="invByWarehouse.get(node.id) || []" stripe border size="small">
+            <el-table-column prop="productCode" label="编码" width="100" />
+            <el-table-column prop="productName" label="商品" min-width="130" />
+            <el-table-column prop="batchNo" label="批次" width="80" />
+            <el-table-column prop="quantity" label="数量" width="70" align="center">
+              <template #default="{ row }"><span style="font-weight:600;">{{ row.quantity }}</span></template>
+            </el-table-column>
+            <el-table-column label="均价" width="100" align="right">
+              <template #default="{ row }">¥{{ (row.costPrice || 0).toFixed(2) }}</template>
+            </el-table-column>
+            <el-table-column label="金额" width="100" align="right">
+              <template #default="{ row }">¥{{ ((row.costPrice || 0) * (row.quantity || 0)).toFixed(2) }}</template>
+            </el-table-column>
+          </el-table>
         </div>
       </div>
 
-      <div class="grand-total" v-if="treeWithStock.length">
+      <div class="grand-total" v-if="flatList.length">
         <span>总计：{{ grandTotal.qty }} 件 · 金额 ¥{{ grandTotal.amt.toFixed(2) }}</span>
       </div>
     </div>
@@ -189,21 +153,22 @@ onMounted(() => { fetchWarehouseTree(); fetchData() })
 </template>
 
 <style scoped>
-.tree-root { margin-bottom: 4px; border: 1px solid #e4e7ed; border-radius: 6px; overflow: hidden; background: #fff; }
+.tree-row { border-bottom: 1px solid #f0f0f0; }
+.tree-row:last-child { border-bottom: none; }
+.tree-row:hover { background: #fafafa; }
 .tree-node {
-  display: flex; align-items: center; gap: 8px; padding: 10px 16px;
-  cursor: pointer; user-select: none; transition: background .15s;
-  border-bottom: 1px solid #f0f0f0;
+  display: flex; align-items: center; gap: 8px; padding: 10px 0;
+  cursor: pointer; user-select: none;
 }
-.tree-node:hover { background: #f5f7fa; }
+.tree-node.level-1 { background: #ecf5ff; margin: -1px -16px; padding: 10px 16px; border-radius: 6px 6px 0 0; font-size: 15px; font-weight: 700; }
+.tree-node.level-1:hover { background: #d9ecff; }
+.tree-node.level-2 { font-size: 14px; }
+.tree-node.level-3 { font-size: 13px; }
+.tree-node.level-4 { cursor: default; font-size: 13px; }
 .toggle-icon { font-size: 10px; color: #909399; width: 12px; text-align: center; flex-shrink: 0; }
-.node-name { font-weight: 600; color: #303133; white-space: nowrap; }
+.node-name { color: #303133; font-weight: 600; white-space: nowrap; }
 .node-stats { font-size: 12px; color: #909399; margin-left: auto; white-space: nowrap; }
-.tree-level-1 { background: #ecf5ff; font-size: 15px; }
-.tree-level-2 { font-size: 14px; }
-.tree-level-3 { font-size: 13px; }
-.tree-level-4 { cursor: default; font-size: 13px; }
-.leaf-inventory { margin: 8px 16px; }
+.leaf-inventory { margin: 4px 0 12px 0; }
 .grand-total {
   text-align: right; padding: 14px 20px; margin-top: 8px;
   font-size: 15px; font-weight: 600; color: #303133;

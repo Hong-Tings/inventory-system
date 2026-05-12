@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, reactive, watch } from 'vue'
 import request from '../../api/request'
-import type { Warehouse, Product } from '../../types/api'
+import type { Product } from '../../types/api'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useRoute, useRouter, onBeforeRouteLeave } from 'vue-router'
 
@@ -11,7 +11,7 @@ const isEdit = ref(false)
 const orderId = ref<number | null>(null)
 const loading = ref(false)
 const submitting = ref(false)
-const warehouses = ref<Warehouse[]>([])
+const warehouseTree = ref<any[]>([])
 const products = ref<Product[]>([])
 const warehouseStock = ref<Record<number, number>>({})
 const dirty = ref(false)
@@ -29,13 +29,15 @@ const form = reactive({
   }>,
 })
 
+async function fetchWarehouseTree() {
+  const res = await request.get('/warehouse/tree')
+  warehouseTree.value = res.data.data
+}
+
 async function fetchBaseData() {
-  const [wRes, pRes] = await Promise.all([
-    request.get('/warehouse/list'),
-    request.get('/product/list'),
-  ])
-  warehouses.value = wRes.data.data
+  const pRes = await request.get('/product/list')
   products.value = pRes.data.data
+  await fetchWarehouseTree()
 }
 
 function addItem() {
@@ -179,16 +181,28 @@ watch(() => form.outWarehouseId, async (whId) => {
         <el-row :gutter="24">
           <el-col :span="8">
             <el-form-item label="调出仓库" required>
-              <el-select v-model="form.outWarehouseId" filterable style="width:100%" placeholder="选择调出仓库">
-                <el-option v-for="w in warehouses" :key="w.id" :label="w.name" :value="w.id" />
-              </el-select>
+              <el-cascader
+                v-model="form.outWarehouseId"
+                :options="warehouseTree"
+                :props="{ value: 'id', label: 'name', children: 'children', emitPath: false }"
+                placeholder="选择调出仓库"
+                filterable
+                clearable
+                style="width:100%"
+              />
             </el-form-item>
           </el-col>
           <el-col :span="8">
             <el-form-item label="调入仓库" required>
-              <el-select v-model="form.inWarehouseId" filterable style="width:100%" placeholder="选择调入仓库">
-                <el-option v-for="w in warehouses" :key="w.id" :label="w.name" :value="w.id" />
-              </el-select>
+              <el-cascader
+                v-model="form.inWarehouseId"
+                :options="warehouseTree"
+                :props="{ value: 'id', label: 'name', children: 'children', emitPath: false }"
+                placeholder="选择调入仓库"
+                filterable
+                clearable
+                style="width:100%"
+              />
             </el-form-item>
           </el-col>
           <el-col :span="8">

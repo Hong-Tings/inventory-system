@@ -1,13 +1,12 @@
 <script setup lang="ts">
 import { ref, onMounted, reactive } from 'vue'
 import request from '../../api/request'
-import type { Warehouse } from '../../types/api'
 import { ElMessage } from 'element-plus'
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
 const submitting = ref(false)
-const warehouses = ref<Warehouse[]>([])
+const warehouseTree = ref<any[]>([])
 
 const form = reactive({
   warehouseId: undefined as number | undefined,
@@ -16,9 +15,9 @@ const form = reactive({
   remark: '',
 })
 
-async function fetchWarehouses() {
-  const res = await request.get('/warehouse/list')
-  warehouses.value = res.data.data
+async function fetchWarehouseTree() {
+  const res = await request.get('/warehouse/tree')
+  warehouseTree.value = res.data.data
 }
 
 function disabledDate(time: Date) {
@@ -35,7 +34,7 @@ async function handleCreate() {
   } finally { submitting.value = false }
 }
 
-onMounted(fetchWarehouses)
+onMounted(fetchWarehouseTree)
 </script>
 
 <template>
@@ -44,9 +43,15 @@ onMounted(fetchWarehouses)
     <div class="detail-card" style="max-width:600px">
       <el-form :model="form" label-width="100px">
         <el-form-item label="仓库" required>
-          <el-select v-model="form.warehouseId" style="width:100%">
-            <el-option v-for="w in warehouses" :key="w.id" :label="w.name" :value="w.id" />
-          </el-select>
+          <el-cascader
+            v-model="form.warehouseId"
+            :options="warehouseTree"
+            :props="{ value: 'id', label: 'name', children: 'children', emitPath: false, checkStrictly: false }"
+            placeholder="选择仓库"
+            filterable
+            clearable
+            style="width:100%"
+          />
         </el-form-item>
         <el-form-item label="盘点日期">
           <el-date-picker v-model="form.orderDate" type="date" value-format="YYYY-MM-DD" style="width:100%" :disabled-date="disabledDate" />

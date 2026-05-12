@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, reactive, watch, computed } from 'vue'
 import request from '../../api/request'
-import type { Warehouse, Customer, Product } from '../../types/api'
+import type { Customer, Product } from '../../types/api'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useRoute, useRouter, onBeforeRouteLeave } from 'vue-router'
 
@@ -10,7 +10,7 @@ const route = useRoute()
 const isEdit = ref(false)
 const orderId = ref<number | null>(null)
 const submitting = ref(false)
-const warehouses = ref<Warehouse[]>([])
+const warehouseTree = ref<any[]>([])
 const customers = ref<Customer[]>([])
 const products = ref<Product[]>([])
 const batchInventory = ref<Record<number, Array<{batchNo: string; quantity: number}>>>({})
@@ -21,9 +21,6 @@ const saved = ref(false)
 
 const selectedCustomer = computed(() =>
   customers.value.find(c => c.id === form.customerId)
-)
-const selectedWarehouse = computed(() =>
-  warehouses.value.find(w => w.id === form.warehouseId)
 )
 
 const form = reactive({
@@ -44,15 +41,23 @@ const form = reactive({
   }>,
 })
 
+async function fetchWarehouseTree() {
+  const res = await request.get('/warehouse/tree')
+  warehouseTree.value = res.data.data
+}
+
+function onWarehouseChange(val: number) {
+  form.warehouseId = val
+}
+
 async function fetchBase() {
-  const [wRes, cRes, pRes] = await Promise.all([
-    request.get('/warehouse/list'),
+  const [cRes, pRes] = await Promise.all([
     request.get('/customer/list'),
     request.get('/product/list'),
   ])
-  warehouses.value = wRes.data.data
   customers.value = cRes.data.data
   products.value = pRes.data.data
+  await fetchWarehouseTree()
 }
 
 function addItem() {
@@ -230,16 +235,16 @@ onMounted(async () => {
           </el-col>
           <el-col :span="8">
             <el-form-item label="仓库" required>
-              <div style="display:flex;gap:8px;width:100%;">
-                <el-select v-model="form.warehouseId" style="flex:1">
-                  <el-option v-for="w in warehouses" :key="w.id" :label="w.name" :value="w.id" />
-                </el-select>
-                <div v-if="form.warehouseId" style="display:flex;align-items:center;gap:8px;white-space:nowrap;font-size:13px;color:#666;line-height:32px;">
-                  <span>{{ selectedWarehouse?.contact || '-' }}</span>
-                  <span style="color:#999;">|</span>
-                  <span>{{ selectedWarehouse?.phone || '-' }}</span>
-                </div>
-              </div>
+              <el-cascader
+                v-model="form.warehouseId"
+                :options="warehouseTree"
+                :props="{ value: 'id', label: 'name', children: 'children', emitPath: false, checkStrictly: false }"
+                placeholder="选择仓库"
+                filterable
+                clearable
+                style="width:100%"
+                @change="onWarehouseChange"
+              />
             </el-form-item>
           </el-col>
           <el-col :span="8">

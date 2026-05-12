@@ -120,7 +120,7 @@ onMounted(fetchTree)
         <el-table-column prop="name" label="仓库名称" min-width="200">
           <template #default="{ row }">
             <span :style="{ fontWeight: row.level === 1 ? 'bold' : 'normal', color: row.status === 0 ? '#999' : '' }">{{ row.name }}</span>
-            <el-tag size="small" style="margin-left:6px;">{{ row.level }}级</el-tag>
+            <el-tag :type="['','primary','success','warning','info'][row.level]" size="small" style="margin-left:6px;">{{ row.level }}级</el-tag>
           </template>
         </el-table-column>
         <el-table-column prop="code" label="编码" width="140" />

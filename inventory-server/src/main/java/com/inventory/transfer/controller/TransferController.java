@@ -7,11 +7,16 @@ import com.inventory.common.result.PageResult;
 import com.inventory.common.result.R;
 import com.inventory.common.util.ExcelUtil;
 import com.inventory.transfer.entity.InventoryTransfer;
+import com.inventory.transfer.entity.TransferDetailExportVO;
 import com.inventory.transfer.entity.TransferExportVO;
 import com.inventory.transfer.service.TransferService;
+import com.alibaba.excel.EasyExcel;
+import com.alibaba.excel.write.metadata.WriteSheet;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.net.URLEncoder;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.*;
@@ -158,26 +163,21 @@ public class TransferController {
             List<Long> idList = Arrays.stream(ids.split(",")).map(Long::parseLong).collect(Collectors.toList());
             list = list.stream().filter(t -> idList.contains(t.getId())).collect(Collectors.toList());
         }
-        List<TransferExportVO> voList = list.stream().map(s -> {
-            TransferExportVO vo = new TransferExportVO();
-            vo.setOrderNo(s.getOrderNo());
-            vo.setFromWarehouseName(s.getFromWarehouseName());
-            vo.setToWarehouseName(s.getToWarehouseName());
-            vo.setTotalQuantity(s.getTotalQuantity());
-            if (s.getStatus() != null) {
-                switch (s.getStatus()) {
-                    case 0: vo.setStatus("草稿"); break;
-                    case 1: vo.setStatus("已完成"); break;
-                    case 2: vo.setStatus("已取消"); break;
-                    case 4: vo.setStatus("待审批"); break;
-                    default: vo.setStatus("未知"); break;
-                }
+        response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+        response.setCharacterEncoding("utf-8");
+        try {
+            String fileName = URLEncoder.encode("库存调拨", "UTF-8").replaceAll("\\+", "%20");
+            response.setHeader("Content-disposition", "attachment;filename*=utf-8''" + fileName + ".xlsx");
+            var excelWriter = EasyExcel.write(response.getOutputStream(), TransferDetailExportVO.class).build();
+            for (InventoryTransfer s : list) {
+                List<TransferDetailExportVO> sheetData = transferService.getExportDetailList(List.of(s));
+                WriteSheet writeSheet = EasyExcel.writerSheet(s.getOrderNo()).build();
+                excelWriter.write(sheetData, writeSheet);
             }
-            if (s.getOrderDate() != null) vo.setOrderDate(s.getOrderDate());
-            if (s.getCreateTime() != null) vo.setCreateTime(s.getCreateTime());
-            if (s.getUpdateTime() != null) vo.setUpdateTime(s.getUpdateTime());
-            return vo;
-        }).collect(Collectors.toList());
-        ExcelUtil.export(response, voList, "调拨单列表", TransferExportVO.class);
+            excelWriter.finish();
+        } catch (IOException e) {
+            throw new RuntimeException("导出失败", e);
+        }
+        // grouped by sheet above
     }
 }

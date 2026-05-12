@@ -15,6 +15,7 @@ import com.inventory.system.entity.SysUser;
 import com.inventory.system.mapper.SysUserMapper;
 import com.inventory.transfer.entity.InventoryTransfer;
 import com.inventory.transfer.entity.InventoryTransferItem;
+import com.inventory.transfer.entity.TransferDetailExportVO;
 import com.inventory.transfer.mapper.InventoryTransferItemMapper;
 import com.inventory.transfer.mapper.InventoryTransferMapper;
 import com.inventory.warehouse.entity.Warehouse;
@@ -27,6 +28,7 @@ import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -113,6 +115,35 @@ public class TransferService {
             enrichOrder(transfer);
         }
         return transfer;
+    }
+
+    public List<TransferDetailExportVO> getExportDetailList(List<InventoryTransfer> list) {
+        List<TransferDetailExportVO> result = new ArrayList<>();
+        for (InventoryTransfer t : list) {
+            List<InventoryTransferItem> items = transferItemMapper.selectList(
+                    new LambdaQueryWrapper<InventoryTransferItem>().eq(InventoryTransferItem::getTransferId, t.getId()));
+            enrichItems(items);
+            for (InventoryTransferItem item : items) {
+                TransferDetailExportVO vo = new TransferDetailExportVO();
+                vo.setOrderNo(t.getOrderNo());
+                vo.setFromWarehouseName(t.getFromWarehouseName());
+                vo.setToWarehouseName(t.getToWarehouseName());
+                vo.setStatus(t.getStatus() != null ? (t.getStatus() == 0 ? "草稿" : t.getStatus() == 1 ? "已完成" : t.getStatus() == 2 ? "已取消" : t.getStatus() == 4 ? "待审批" : "未知") : "未知");
+                vo.setProductName(item.getProductName());
+                vo.setProductCode(item.getProductCode());
+                vo.setQuantity(item.getQuantity());
+                vo.setBatchNo(item.getBatchNo());
+                result.add(vo);
+            }
+            if (items.isEmpty()) {
+                TransferDetailExportVO vo = new TransferDetailExportVO();
+                vo.setOrderNo(t.getOrderNo());
+                vo.setFromWarehouseName(t.getFromWarehouseName());
+                vo.setToWarehouseName(t.getToWarehouseName());
+                result.add(vo);
+            }
+        }
+        return result;
     }
 
     private void enrichOrder(InventoryTransfer t) {

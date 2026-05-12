@@ -38,3 +38,6 @@ uploads/
 
 # Claude Code
 .claude/
+
+# Worktrees
+.worktrees/

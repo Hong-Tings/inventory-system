@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, reactive, watch, onMounted, computed } from 'vue'
+import { ref, reactive, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import request, { downloadFile } from '../../api/request'
 import type { Inventory } from '../../types/api'
@@ -34,7 +34,7 @@ function toggle(id: number) { expanded.has(id) ? expanded.delete(id) : expanded.
 function isExpanded(id: number) { return expanded.has(id) }
 
 function handleSearch() { fetchData() }
-function handleReset() { query.value = { productName: '', warehouseId: undefined }; fetchData() expanded.clear() }
+function handleReset() { query.value = { productName: '', warehouseId: undefined }; fetchData(); expanded.clear() }
 function handleExport() { downloadFile('/inventory/export', '库存查询.xlsx') }
 
 // 从 inventory 数据构建商品名→库存的映射
@@ -101,7 +101,6 @@ const grandTotal = computed(() => {
   return { qty, amt }
 })
 
-watch(() => query.value.warehouseId, () => { fetchData() })
 onMounted(() => { fetchWarehouseTree(); fetchData() })
 </script>
 
@@ -117,13 +116,16 @@ onMounted(() => { fetchWarehouseTree(); fetchData() })
 
     <div class="search-bar">
       <el-input v-model="query.productName" placeholder="商品名称/编码" clearable style="width:200px" @keyup.enter="handleSearch" @clear="handleSearch" />
-      <el-cascader
+      <el-tree-select
         v-model="query.warehouseId"
-        :options="warehouseTree"
-        :props="{ value: 'id', label: 'name', children: 'children', emitPath: false, checkStrictly: true }"
+        :data="warehouseTree"
+        :props="{ label: 'name', children: 'children' }"
+        node-key="id"
         placeholder="全部仓库"
         clearable
-        style="width:200px"
+        filterable
+        style="width:220px"
+        @change="fetchData"
       />
       <el-button type="primary" @click="handleSearch">查询</el-button>
       <el-button @click="handleReset">重置</el-button>

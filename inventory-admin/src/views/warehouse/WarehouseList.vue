@@ -13,9 +13,14 @@ const list = ref<Warehouse[]>([])
 const total = ref(0)
 const selectedIds = ref<number[]>([])
 const dialogVisible = ref(false)
+const level1List = ref<any[]>([])
+const level2List = ref<any[]>([])
+const level3List = ref<any[]>([])
+const level4List = ref<any[]>([])
+const parentCandidates = ref<any[]>([])
 
-const query = reactive<PageParams & { name?: string; status?: number; contact?: string; phone?: string; address?: string }>({ page: 1, size: 10, name: '', status: undefined, contact: '', phone: '', address: '' })
-const form = reactive<any>({ name: '', code: '', contact: '', phone: '', address: '', status: 1, remark: '' })
+const query = reactive<PageParams & { name?: string; status?: number; contact?: string; phone?: string; address?: string; level1Id?: number; level2Id?: number; level3Id?: number; level4Id?: number; keyword?: string }>({ page: 1, size: 10, name: '', status: undefined, contact: '', phone: '', address: '', level1Id: undefined, level2Id: undefined, level3Id: undefined, level4Id: undefined, keyword: '' })
+const form = reactive<any>({ name: '', code: '', contact: '', phone: '', address: '', status: 1, remark: '', level: 4, parentId: undefined })
 
 async function fetchData() {
   loading.value = true
@@ -26,8 +31,8 @@ async function fetchData() {
   } finally { loading.value = false }
 }
 function handleSearch() { query.page = 1; fetchData() }
-function handleReset() { query.name = ''; query.status = undefined; query.contact = ''; query.phone = ''; query.address = ''; handleSearch() }
-function openCreate() { Object.assign(form, { id: undefined, name: '', code: '', contact: '', phone: '', address: '', status: 1, remark: '' }); dialogVisible.value = true }
+function handleReset() { query.name = ''; query.status = undefined; query.contact = ''; query.phone = ''; query.address = ''; query.level1Id = undefined; query.level2Id = undefined; query.level3Id = undefined; query.level4Id = undefined; query.keyword = ''; level2List.value = []; level3List.value = []; level4List.value = []; handleSearch() }
+function openCreate() { Object.assign(form, { id: undefined, name: '', code: '', contact: '', phone: '', address: '', status: 1, remark: '', level: 4, parentId: undefined }); dialogVisible.value = true }
 function openEdit(row: any) { Object.assign(form, { ...row }); dialogVisible.value = true }
 async function handleSave() {
   if (!form.name || !form.address || !form.contact || !form.phone) { ElMessage.warning('请填写完整信息'); return }
@@ -60,7 +65,36 @@ async function handleBatchToggle(status: number) {
   selectedIds.value = []; fetchData()
 }
 function handleExport() { downloadFile('/warehouse/export', '仓库.xlsx') }
-onMounted(fetchData)
+async function onLevel1Change(val: number | undefined) {
+  query.level2Id = undefined; query.level3Id = undefined; query.level4Id = undefined;
+  level2List.value = []; level3List.value = []; level4List.value = [];
+  if (val) { const res = await request.get('/warehouse/children/' + val); level2List.value = res.data.data }
+  handleSearch()
+}
+async function onLevel2Change(val: number | undefined) {
+  query.level3Id = undefined; query.level4Id = undefined;
+  level3List.value = []; level4List.value = [];
+  if (val) { const res = await request.get('/warehouse/children/' + val); level3List.value = res.data.data }
+  handleSearch()
+}
+async function onLevel3Change(val: number | undefined) {
+  query.level4Id = undefined; level4List.value = [];
+  if (val) { const res = await request.get('/warehouse/children/' + val); level4List.value = res.data.data }
+  handleSearch()
+}
+async function onLevelChange(level: number) {
+  form.parentId = undefined
+  if (level > 1) {
+    const levelMap: Record<number, number> = { 2: 1, 3: 2, 4: 3 }
+    const res = await request.get('/warehouse/page', { params: { page: 1, size: 999, level: levelMap[level] } })
+    parentCandidates.value = res.data.data.records
+  }
+}
+onMounted(async () => {
+  const res = await request.get('/warehouse/page', { params: { page: 1, size: 999, level: 1 } })
+  level1List.value = res.data.data.records
+  fetchData()
+})
 </script>
 
 <template>
@@ -73,6 +107,18 @@ onMounted(fetchData)
     </div>
 
     <div class="search-bar">
+      <el-select v-model="query.level1Id" placeholder="1级大区" clearable style="width:140px" @change="onLevel1Change">
+        <el-option v-for="w in level1List" :key="w.id" :label="w.name" :value="w.id" />
+      </el-select>
+      <el-select v-model="query.level2Id" placeholder="2级区域" clearable style="width:140px" :disabled="!query.level1Id" @change="onLevel2Change">
+        <el-option v-for="w in level2List" :key="w.id" :label="w.name" :value="w.id" />
+      </el-select>
+      <el-select v-model="query.level3Id" placeholder="3级城市" clearable style="width:140px" :disabled="!query.level2Id" @change="onLevel3Change">
+        <el-option v-for="w in level3List" :key="w.id" :label="w.name" :value="w.id" />
+      </el-select>
+      <el-select v-model="query.level4Id" placeholder="4级仓库" clearable style="width:140px" :disabled="!query.level3Id" @change="handleSearch">
+        <el-option v-for="w in level4List" :key="w.id" :label="w.name" :value="w.id" />
+      </el-select>
       <el-input v-model="query.name" placeholder="仓库名称" clearable style="width:200px" @keyup.enter="handleSearch" @clear="handleSearch" />
       <el-input v-model="query.contact" placeholder="联系人" clearable style="width:140px" @keyup.enter="handleSearch" @clear="handleSearch" />
       <el-input v-model="query.phone" placeholder="联系电话" clearable style="width:160px" @keyup.enter="handleSearch" @clear="handleSearch" />
@@ -80,6 +126,7 @@ onMounted(fetchData)
       <el-select v-model="query.status" placeholder="状态" clearable style="width:120px" @change="handleSearch">
         <el-option label="启用" :value="1" /><el-option label="停用" :value="0" />
       </el-select>
+      <el-input v-model="query.keyword" placeholder="搜索仓库名称/编码" clearable style="width:180px" @keyup.enter="handleSearch" @clear="handleSearch" />
       <el-button type="primary" @click="handleSearch">查询</el-button>
       <el-button @click="handleReset">重置</el-button>
     </div>
@@ -94,7 +141,11 @@ onMounted(fetchData)
       <el-table :data="list" v-loading="loading" stripe border @selection-change="(rows: any[]) => selectedIds = rows.map(r => r.id)">
         <el-table-column type="selection" width="40" />
         <el-table-column prop="code" label="编码" width="100" />
+        <el-table-column prop="level" label="层级" width="80">
+          <template #default="{ row }">{{ ['','大区','区域','城市','仓库'][row.level] || '-' }}</template>
+        </el-table-column>
         <el-table-column prop="name" label="仓库名称" width="140" />
+        <el-table-column prop="parentName" label="上级" width="120" />
         <el-table-column prop="address" label="地址" width="120" show-overflow-tooltip />
         <el-table-column prop="contact" label="负责人" width="90" />
         <el-table-column prop="phone" label="联系电话" width="130" />
@@ -130,6 +181,19 @@ onMounted(fetchData)
         <el-form-item label="仓库名称" required><el-input v-model="form.name" placeholder="如：一号仓库、门店仓库" /></el-form-item>
         <el-form-item label="仓库编码"><span style="color:#999;line-height:32px;">{{ form.code || '自动生成' }}</span></el-form-item>
         <el-form-item label="仓库地址" required><el-input v-model="form.address" placeholder="XX市XX区XX路XX号" /></el-form-item>
+        <el-form-item label="层级" required>
+          <el-select v-model="form.level" placeholder="选择层级" @change="onLevelChange">
+            <el-option label="1级-大区" :value="1" />
+            <el-option label="2级-区域" :value="2" />
+            <el-option label="3级-城市" :value="3" />
+            <el-option label="4级-仓库" :value="4" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="上级仓库" v-if="form.level && form.level > 1">
+          <el-select v-model="form.parentId" placeholder="选择上级" filterable>
+            <el-option v-for="w in parentCandidates" :key="w.id" :label="w.name" :value="w.id" />
+          </el-select>
+        </el-form-item>
         <el-row :gutter="16">
           <el-col :span="12"><el-form-item label="负责人" required><el-input v-model="form.contact" /></el-form-item></el-col>
           <el-col :span="12"><el-form-item label="联系电话" required><el-input v-model="form.phone" /></el-form-item></el-col>

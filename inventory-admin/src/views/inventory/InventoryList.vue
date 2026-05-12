@@ -66,6 +66,24 @@ function buildTreeWithStock(nodes: any[]): any[] {
   })
 }
 
+// 当级联选择了仓库时，裁剪树只显示该仓库及其子节点
+function pruneTree(nodes: any[], targetId: number): any[] | null {
+  for (const n of nodes) {
+    if (n.id === targetId) return [n]
+    if (n.children?.length) {
+      const found = pruneTree(n.children, targetId)
+      if (found) return found
+    }
+  }
+  return null
+}
+
+const displayTree = computed(() => {
+  const tree = warehouseTree.value
+  if (!query.value.warehouseId) return tree
+  return pruneTree(tree, query.value.warehouseId) || tree
+})
+
 // 展平树为列表，depth 用于缩进；跳过收起分支
 function flattenTree(nodes: any[], depth = 0): any[] {
   const result: any[] = []
@@ -78,7 +96,7 @@ function flattenTree(nodes: any[], depth = 0): any[] {
   return result
 }
 
-const flatList = computed(() => flattenTree(buildTreeWithStock(warehouseTree.value)))
+const flatList = computed(() => flattenTree(buildTreeWithStock(displayTree.value)))
 
 // 合计
 const grandTotal = computed(() => {

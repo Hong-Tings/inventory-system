@@ -109,7 +109,7 @@ onPullDownRefresh(() => { fetchData(); uni.stopPullDownRefresh() })
       <text class="nav-link" @click="uni.navigateTo({ url: '/pages/inventory/log' })">流水 ›</text>
     </view>
     <view class="search-bar" style="display:flex;gap:8px;">
-      <input v-model="keyword" class="search-input" placeholder="搜索商品名称" style="flex:1;" @confirm="onSearch" />
+      <input v-model="keyword" class="search-input" placeholder="商品名称/编码" style="flex:1;" @confirm="onSearch" />
       <view class="filter-pill picker-select" @click="openWarehousePicker">{{ whLabel }}</view>
       <view v-if="showWhPicker" class="picker-overlay" @click="showWhPicker = false">
         <view class="picker-modal" @click.stop>

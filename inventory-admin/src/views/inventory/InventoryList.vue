@@ -87,7 +87,7 @@ onMounted(() => { fetchWarehouseTree(); fetchData() })
 
     <!-- 搜索 -->
     <div class="search-bar">
-      <el-input v-model="query.productName" placeholder="商品名称" clearable style="width:200px" @keyup.enter="handleSearch" @clear="handleSearch" />
+      <el-input v-model="query.productName" placeholder="商品名称/编码" clearable style="width:200px" @keyup.enter="handleSearch" @clear="handleSearch" />
       <el-cascader
         v-model="query.warehouseId"
         :options="warehouseTree"

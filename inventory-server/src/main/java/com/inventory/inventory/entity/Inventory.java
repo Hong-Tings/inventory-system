@@ -36,5 +36,8 @@ public class Inventory {
     private String warehouseName;
 
     @TableField(exist = false)
+    private String warehouseCode;
+
+    @TableField(exist = false)
     private String locationName;
 }

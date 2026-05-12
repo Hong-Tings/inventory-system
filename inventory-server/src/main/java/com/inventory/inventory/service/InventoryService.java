@@ -60,7 +60,7 @@ public class InventoryService {
             }
             if (inv.getWarehouseId() != null) {
                 Warehouse w = warehouseMapper.selectById(inv.getWarehouseId());
-                if (w != null) inv.setWarehouseName(w.getName());
+                if (w != null) inv.setWarehouseName(w.getName()); inv.setWarehouseCode(w.getCode());
             }
         }
         return result;
@@ -78,7 +78,7 @@ public class InventoryService {
             }
             if (inv.getWarehouseId() != null) {
                 Warehouse w = warehouseMapper.selectById(inv.getWarehouseId());
-                if (w != null) inv.setWarehouseName(w.getName());
+                if (w != null) inv.setWarehouseName(w.getName()); inv.setWarehouseCode(w.getCode());
             }
         }
         return list;

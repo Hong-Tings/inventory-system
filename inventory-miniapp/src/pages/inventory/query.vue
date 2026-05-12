@@ -181,6 +181,7 @@ onPullDownRefresh(() => { fetchData(); uni.stopPullDownRefresh() })
               </view>
               <view class="inv-footer">
                 <text>批次: {{ inv.batchNo || '-' }}</text>
+                <text>{{ inv.warehouseCode || '' }}</text>
                 <text>均价 ¥{{ (inv.costPrice || 0).toFixed(2) }}</text>
                 <text>¥{{ ((inv.costPrice || 0) * (inv.quantity || 0)).toFixed(2) }}</text>
               </view>

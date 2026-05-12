@@ -1,13 +1,14 @@
 <script setup lang="ts">
 import { ref, onMounted, reactive, computed } from 'vue'
-import request, { downloadFile } from '../../api/request'
-import type { Inventory, PageParams, Warehouse } from '../../types/api'
 import { useRouter } from 'vue-router'
+import request, { downloadFile } from '../../api/request'
+import type { Inventory, PageParams } from '../../types/api'
 
 const router = useRouter()
+
 const loading = ref(false)
 const allList = ref<Inventory[]>([])
-const warehouses = ref<Warehouse[]>([])
+const warehouseTree = ref<any[]>([])
 
 const query = reactive<PageParams & { productName?: string; warehouseId?: number }>({
   page: 1, size: 999, productName: '', warehouseId: undefined,
@@ -21,23 +22,36 @@ async function fetchData() {
   } finally { loading.value = false }
 }
 
-async function fetchWarehouses() {
-  const res = await request.get('/warehouse/list')
-  warehouses.value = res.data.data
+async function fetchWarehouseTree() {
+  const res = await request.get('/warehouse/tree')
+  warehouseTree.value = res.data.data || []
 }
 
+function onWarehouseChange(val: number | undefined) {
+  query.warehouseId = val
+  handleSearch()
+}
 function handleSearch() { query.page = 1; fetchData() }
 function handleReset() { query.productName = ''; query.warehouseId = undefined; handleSearch() }
 function handleExport() { downloadFile('/inventory/export', '库存查询.xlsx') }
 
+// 从树中递归构建仓库名映射
+function buildNameMap(nodes: any[], map: Record<number, string> = {}) {
+  for (const n of nodes) {
+    map[n.id] = n.name
+    if (n.children?.length) buildNameMap(n.children, map)
+  }
+  return map
+}
+
 // 按仓库分组
 const grouped = computed(() => {
+  const nameMap = buildNameMap(warehouseTree.value)
   const map = new Map<number, { wId: number; wName: string; items: Inventory[] }>()
   for (const item of allList.value) {
     const wid = item.warehouseId
     if (!map.has(wid)) {
-      const w = warehouses.value.find(wh => wh.id === wid)
-      map.set(wid, { wId: wid, wName: w?.name || '未知仓库', items: [] })
+      map.set(wid, { wId: wid, wName: nameMap[wid] || '未知仓库', items: [] })
     }
     map.get(wid)!.items.push(item)
   }
@@ -58,7 +72,7 @@ const grandTotal = computed(() => {
   return { qty, amount }
 })
 
-onMounted(() => { fetchWarehouses(); fetchData() })
+onMounted(() => { fetchWarehouseTree(); fetchData() })
 </script>
 
 <template>
@@ -74,9 +88,15 @@ onMounted(() => { fetchWarehouses(); fetchData() })
     <!-- 搜索 -->
     <div class="search-bar">
       <el-input v-model="query.productName" placeholder="商品名称" clearable style="width:200px" @keyup.enter="handleSearch" @clear="handleSearch" />
-      <el-select v-model="query.warehouseId" placeholder="全部仓库" clearable style="width:160px" @change="handleSearch">
-        <el-option v-for="w in warehouses" :key="w.id" :label="w.name" :value="w.id" />
-      </el-select>
+      <el-cascader
+        v-model="query.warehouseId"
+        :options="warehouseTree"
+        :props="{ value: 'id', label: 'name', children: 'children', emitPath: false, checkStrictly: true }"
+        placeholder="全部仓库"
+        clearable
+        style="width:200px"
+        @change="onWarehouseChange"
+      />
       <el-button type="primary" @click="handleSearch">查询</el-button>
       <el-button @click="handleReset">重置</el-button>
     </div>

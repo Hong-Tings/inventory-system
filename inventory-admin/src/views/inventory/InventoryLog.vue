@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { ref, onMounted, reactive } from 'vue'
 import request, { downloadFile } from '../../api/request'
-import type { InventoryLog as InventoryLogType, PageResult, PageParams, Warehouse } from '../../types/api'
+import type { InventoryLog as InventoryLogType, PageResult, PageParams } from '../../types/api'
 
 const loading = ref(false)
 const list = ref<InventoryLogType[]>([])
 const total = ref(0)
-const warehouses = ref<Warehouse[]>([])
+const warehouseTree = ref<any[]>([])
 const query = reactive<PageParams & {
   productName?: string
   warehouseId?: number
@@ -43,11 +43,16 @@ async function fetchData() {
   } finally { loading.value = false }
 }
 
-async function fetchWarehouses() {
+async function fetchWarehouseTree() {
   try {
-    const res = await request.get('/warehouse/list')
-    warehouses.value = res.data.data
+    const res = await request.get('/warehouse/tree')
+    warehouseTree.value = res.data.data || []
   } catch { /* ignore */ }
+}
+
+function onWarehouseChange(val: number | undefined) {
+  query.warehouseId = val
+  handleSearch()
 }
 
 function handleSearch() {
@@ -60,7 +65,7 @@ function handleExport() {
 }
 
 onMounted(() => {
-  fetchWarehouses()
+  fetchWarehouseTree()
   fetchData()
 })
 </script>
@@ -71,10 +76,15 @@ onMounted(() => {
     <div class="search-bar">
       <el-input v-model="query.productName" placeholder="商品名称" clearable style="width:160px"
         @keyup.enter="handleSearch" @clear="handleSearch" />
-      <el-select v-model="query.warehouseId" placeholder="仓库" clearable style="width:140px"
-        @change="handleSearch">
-        <el-option v-for="w in warehouses" :key="w.id" :label="w.name" :value="w.id" />
-      </el-select>
+      <el-cascader
+        v-model="query.warehouseId"
+        :options="warehouseTree"
+        :props="{ value: 'id', label: 'name', children: 'children', emitPath: false, checkStrictly: true }"
+        placeholder="仓库"
+        clearable
+        style="width:180px"
+        @change="onWarehouseChange"
+      />
       <el-select v-model="query.changeType" placeholder="操作类型" clearable style="width:140px"
         @change="handleSearch">
         <el-option v-for="(label, key) in changeTypeMap" :key="key" :label="label" :value="key" />

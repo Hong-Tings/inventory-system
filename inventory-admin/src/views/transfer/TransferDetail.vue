@@ -3,16 +3,19 @@ import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import request from '../../api/request'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { useUserStore } from '../../store/user'
 
 const route = useRoute()
 const router = useRouter()
 const loading = ref(false)
 const order = ref<any | null>(null)
+const userStore = useUserStore()
 
 const statusMap: Record<number, { label: string; type: string }> = {
   0: { label: '草稿', type: 'info' },
   1: { label: '已完成', type: 'success' },
   2: { label: '已取消', type: 'danger' },
+  4: { label: '待审批', type: 'warning' },
 }
 
 async function fetchDetail() {
@@ -38,6 +41,27 @@ async function handleCancel() {
   ElMessage.success('已取消'); fetchDetail()
 }
 
+async function handleApprove() {
+  try {
+    await ElMessageBox.confirm('确认审核通过此调拨单？通过后将更新库存。', '审核确认', { type: 'info' })
+  } catch { return }
+  await request.put(`/transfer/${route.params.id}/approve`)
+  ElMessage.success('已审核通过'); fetchDetail()
+}
+
+async function handleReject() {
+  try {
+    const { value } = await ElMessageBox.prompt('确定驳回此调拨单？', '驳回', {
+      inputPlaceholder: '请填写驳回原因（必填）',
+      inputValidator: (val: string) => !!val.trim(),
+      inputErrorMessage: '驳回原因不能为空',
+      type: 'warning',
+    })
+    await request.put(`/transfer/${route.params.id}/reject`, { reason: value })
+    ElMessage.success('已驳回'); fetchDetail()
+  } catch {}
+}
+
 onMounted(fetchDetail)
 </script>
 
@@ -48,7 +72,9 @@ onMounted(fetchDetail)
       <div>
         <el-button @click="router.push('/transfer')">返回列表</el-button>
         <el-button v-if="order?.status === 0" type="primary" @click="handleSubmit">确认调拨</el-button>
-        <el-button v-if="order?.status === 0" type="danger" @click="handleCancel">取消调拨</el-button>
+        <el-button v-if="userStore.isAdmin && order?.status === 4" type="success" @click="handleApprove">审核通过</el-button>
+        <el-button v-if="userStore.isAdmin && order?.status === 4" type="warning" @click="handleReject">驳回</el-button>
+        <el-button v-if="order?.status === 0 || order?.status === 4" type="danger" @click="handleCancel">取消调拨</el-button>
       </div>
     </div>
     <div class="detail-card" v-if="order">

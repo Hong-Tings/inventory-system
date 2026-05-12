@@ -175,8 +175,7 @@ async function handleSubmit() {
       <view class="form-item">
         <text class="label">仓库 *</text>
         <view class="picker picker-select" @click="openWarehousePicker">
-          <text>{{ whDisplay }}</text>
-          <text v-if="!form.warehouseId" style="color:#bbb;">请选择</text>
+          <text :style="!form.warehouseId ? 'color:#bbb;' : ''">{{ whDisplay }}</text>
         </view>
         <!-- 级联仓库选择 -->
         <view v-if="showWhPicker" class="picker-overlay" @click="showWhPicker = false">

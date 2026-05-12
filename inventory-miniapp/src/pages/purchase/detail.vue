@@ -7,7 +7,7 @@ import FloatingHome from '@/components/FloatingHome'
 const order = ref(null)
 const loading = ref(false)
 const actionLoading = ref(false)
-const statusMap = { 0: '草稿', 1: '已入库', 2: '已取消' }
+const statusMap = { 0: '草稿', 1: '已入库', 2: '已取消', 4: '待审批' }
 
 let id = null
 
@@ -64,8 +64,8 @@ async function cancelOrder() {
         <text style="font-size:20px;font-weight:700;color:#1a1a1a;display:block;">{{ order.orderNo }}</text>
         <text style="display:inline-block;margin-top:8px;font-size:12px;padding:4px 16px;border-radius:12px;font-weight:500;"
           :style="{
-            background: order.status === 1 ? '#e8f5e9' : order.status === 2 ? '#fce4ec' : '#f5f5f5',
-            color: order.status === 1 ? '#2e7d32' : order.status === 2 ? '#c62828' : '#888'
+            background: order.status === 1 ? '#e8f5e9' : order.status === 2 ? '#fce4ec' : order.status === 4 ? '#fff3e0' : '#f5f5f5',
+            color: order.status === 1 ? '#2e7d32' : order.status === 2 ? '#c62828' : order.status === 4 ? '#e65100' : '#888'
           }">
           {{ statusMap[order.status] || '未知' }}
         </text>

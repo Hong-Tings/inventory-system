@@ -6,7 +6,7 @@ import request from '@/api/request'
 const list = ref([])
 const loading = ref(false)
 const keyword = ref('')
-const statusMap = { 0: '草稿', 1: '已出库', 2: '已取消', 3: '已作废' }
+const statusMap = { 0: '草稿', 1: '已出库', 2: '已取消', 3: '已作废', 4: '待审批' }
 
 async function fetchList() {
   loading.value = true
@@ -47,7 +47,7 @@ onPullDownRefresh(() => { fetchList(); uni.stopPullDownRefresh() })
     </view>
     <view v-else>
       <view v-for="item in list" :key="item.id" class="card"
-        :style="{ borderLeftColor: item.status === 1 ? '#2e7d32' : item.status === 2 ? '#c62828' : '#e0e0e0' }">
+        :style="{ borderLeftColor: item.status === 1 ? '#2e7d32' : item.status === 2 ? '#c62828' : status === 4 ? '#ff9800' : '#e0e0e0' }">
         <view class="card-header">
           <view style="display:flex;align-items:center;gap:8px;">
             <text style="font-size:16px;">📤</text>

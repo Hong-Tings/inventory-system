@@ -7,7 +7,7 @@ import FloatingHome from '@/components/FloatingHome'
 const order = ref(null)
 const loading = ref(false)
 const actionLoading = ref(false)
-const statusMap = { 0: '草稿', 1: '已出库', 2: '已取消' }
+const statusMap = { 0: '草稿', 1: '已出库', 2: '已取消', 4: '待审批' }
 
 let id = null
 onLoad(async (options) => {
@@ -95,7 +95,7 @@ async function cancelOrder() {
 .dh { background: #fff; border-radius: 8px; padding: 20px 16px; text-align: center; margin-bottom: 10px; }
 .dh-no { font-size: 18px; font-weight: 700; display: block; }
 .dh-st { display: inline-block; margin-top: 6px; font-size: 12px; padding: 3px 14px; border-radius: 12px; }
-.dh-1 { background: #e8f5e9; color: #2e7d32; } .dh-0 { background: #f0f0f0; color: #999; } .dh-2 { background: #fbe9e7; color: #c62828; }
+.dh-1 { background: #e8f5e9; color: #2e7d32; } .dh-0 { background: #f0f0f0; color: #999; } .dh-2 { background: #fbe9e7; color: #c62828; } .dh-4 { background: #fff3e0; color: #e65100; }
 .ig { background: #fff; border-radius: 8px; padding: 16px; margin-bottom: 10px; }
 .ig .r { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #f0f0f0; font-size: 14px; }
 .ig .r:last-child { border-bottom: none; }

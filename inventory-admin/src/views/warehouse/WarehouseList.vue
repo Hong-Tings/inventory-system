@@ -140,7 +140,7 @@ onMounted(fetchTree)
 
     <div class="table-container">
       <el-table :data="treeData" v-loading="loading" stripe border row-key="id" :tree-props="{ children: 'children' }" default-expand-all>
-        <el-table-column prop="name" label="仓库名称" min-width="160">
+        <el-table-column prop="name" label="仓库名称" width="180">
           <template #default="{ row }">
             <span :style="{ fontWeight: row.level === 1 ? 'bold' : 'normal', color: row.status === 0 ? '#999' : '' }">{{ row.name }}</span>
             <el-tag :type="['','primary','success','warning','info'][row.level]" size="small" style="margin-left:6px;">{{ row.level }}级</el-tag>

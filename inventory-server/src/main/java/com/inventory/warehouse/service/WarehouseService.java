@@ -84,8 +84,16 @@ public class WarehouseService {
     }
 
     public List<Warehouse> listAll() {
+        // 返回所有叶子节点（无子级的仓库）用于单据选择
+        List<Long> parentIds = warehouseMapper.selectList(
+                new LambdaQueryWrapper<Warehouse>()
+                        .isNotNull(Warehouse::getParentId)
+                        .select(Warehouse::getParentId))
+                .stream().map(Warehouse::getParentId).distinct().collect(Collectors.toList());
         List<Warehouse> list = warehouseMapper.selectList(new LambdaQueryWrapper<Warehouse>()
-                .eq(Warehouse::getStatus, 1).eq(Warehouse::getLevel, 4).orderByAsc(Warehouse::getId));
+                .eq(Warehouse::getStatus, 1)
+                .notIn(!parentIds.isEmpty(), Warehouse::getId, parentIds)
+                .orderByAsc(Warehouse::getId));
         for (Warehouse w : list) enrichStats(w);
         return list;
     }
@@ -112,9 +120,14 @@ public class WarehouseService {
         return result;
     }
 
+    private boolean hasChildren(Long id) {
+        return warehouseMapper.selectCount(
+                new LambdaQueryWrapper<Warehouse>().eq(Warehouse::getParentId, id)) > 0;
+    }
+
     private void enrichStats(Warehouse w) {
-        if (w.getLevel() != null && w.getLevel() < 4) {
-            // 非叶子节点：从所有子级 4 级仓库汇总
+        if (hasChildren(w.getId())) {
+            // 父节点：从所有叶子节点汇总
             List<Long> leafIds = collectLeafIds(w.getId());
             if (leafIds.isEmpty()) {
                 w.setProductCount(0);
@@ -133,7 +146,7 @@ public class WarehouseService {
             }
             w.setTotalAmount(amount);
         } else {
-            // 4 级仓库：直接查库存
+            // 叶子节点：直接查库存
             List<Inventory> invs = inventoryMapper.selectList(
                     new LambdaQueryWrapper<Inventory>().eq(Inventory::getWarehouseId, w.getId()));
             int count = invs.stream().mapToInt(Inventory::getQuantity).sum();
@@ -153,10 +166,10 @@ public class WarehouseService {
                 new LambdaQueryWrapper<Warehouse>().eq(Warehouse::getParentId, parentId));
         List<Long> ids = new java.util.ArrayList<>();
         for (Warehouse child : children) {
-            if (child.getLevel() != null && child.getLevel() == 4) {
-                ids.add(child.getId());
-            } else {
+            if (hasChildren(child.getId())) {
                 ids.addAll(collectLeafIds(child.getId()));
+            } else {
+                ids.add(child.getId());
             }
         }
         return ids;
@@ -164,11 +177,7 @@ public class WarehouseService {
 
     @Transactional(rollbackFor = Exception.class)
     public void save(Warehouse warehouse) {
-        if (warehouse.getLevel() == null || warehouse.getLevel() == 4) {
-            warehouse.setCode(generateWarehouseCode());
-        } else {
-            warehouse.setCode(null); // 虚拟节点无需编码，设为 null 避免唯一键冲突
-        }
+        warehouse.setCode(generateWarehouseCode());
         // 校验层级连续性：子级层级 = 父级层级 + 1
         if (warehouse.getParentId() != null) {
             Warehouse parent = warehouseMapper.selectById(warehouse.getParentId());
@@ -232,11 +241,9 @@ public class WarehouseService {
         Warehouse w = warehouseMapper.selectById(id);
         if (w == null) throw new BusinessException("仓库不存在");
 
-        // 非叶子节点：检查是否有子仓库
-        if (w.getLevel() != null && w.getLevel() < 4) {
-            long childCount = warehouseMapper.selectCount(
-                    new LambdaQueryWrapper<Warehouse>().eq(Warehouse::getParentId, id));
-            if (childCount > 0) throw new BusinessException("该仓库存在子级仓库，请先删除子级仓库");
+        // 父节点：检查是否有子仓库
+        if (hasChildren(id)) {
+            throw new BusinessException("该仓库存在子级仓库，请先删除子级仓库");
         }
 
         // 检查库存

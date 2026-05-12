@@ -72,8 +72,16 @@ class WarehouseServiceTest {
         assertEquals(0, new BigDecimal("2000").compareTo(w.getTotalAmount()));
     }
 
+    private Warehouse mockWarehouse() {
+        Warehouse w = new Warehouse();
+        w.setId(1L);
+        w.setLevel(4);  // 叶子节点，跳过子仓库检查
+        return w;
+    }
+
     @Test
     void delete_shouldThrowWhenInventoryExists() {
+        when(warehouseMapper.selectById(any())).thenReturn(mockWarehouse());
         when(inventoryMapper.selectCount(any())).thenReturn(5L);
 
         BusinessException ex = assertThrows(BusinessException.class, () -> service.delete(1L));
@@ -82,6 +90,7 @@ class WarehouseServiceTest {
 
     @Test
     void delete_shouldThrowWhenPurchaseOrdersExist() {
+        when(warehouseMapper.selectById(any())).thenReturn(mockWarehouse());
         when(inventoryMapper.selectCount(any())).thenReturn(0L);
         when(purchaseOrderMapper.selectCount(any())).thenReturn(3L);
 
@@ -91,6 +100,7 @@ class WarehouseServiceTest {
 
     @Test
     void delete_shouldSucceedWhenNoReferences() {
+        when(warehouseMapper.selectById(any())).thenReturn(mockWarehouse());
         when(inventoryMapper.selectCount(any())).thenReturn(0L);
         when(purchaseOrderMapper.selectCount(any())).thenReturn(0L);
         when(salesOrderMapper.selectCount(any())).thenReturn(0L);

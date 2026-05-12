@@ -66,7 +66,8 @@ async function loadParentCandidates(level: number) {
   }
 }
 async function handleSave() {
-  if (!form.name || !form.address || !form.contact || !form.phone) { ElMessage.warning('请填写完整信息'); return }
+  if (!form.name) { ElMessage.warning('请输入仓库名称'); return }
+  if (form.level === 4 && (!form.address || !form.contact || !form.phone)) { ElMessage.warning('4级仓库需填写地址、负责人和联系电话'); return }
   try {
     if (form.id) await request.put(`/warehouse/${form.id}`, form)
     else await request.post('/warehouse', form)
@@ -152,7 +153,7 @@ onMounted(fetchTree)
       <el-form :model="form" label-width="90px">
         <el-form-item label="仓库名称" required><el-input v-model="form.name" placeholder="如：一号仓库、门店仓库" /></el-form-item>
         <el-form-item label="仓库编码"><span style="color:#999;line-height:32px;">{{ form.code || '自动生成' }}</span></el-form-item>
-        <el-form-item label="仓库地址" required><el-input v-model="form.address" placeholder="XX市XX区XX路XX号" /></el-form-item>
+        <el-form-item label="仓库地址" :required="form.level === 4"><el-input v-model="form.address" :placeholder="form.level === 4 ? 'XX市XX区XX路XX号' : '虚拟节点无需地址'" /></el-form-item>
         <el-form-item label="层级" required>
           <el-select v-model="form.level" placeholder="选择层级" @change="onLevelChange">
             <el-option label="1级" :value="1" />
@@ -166,7 +167,7 @@ onMounted(fetchTree)
             <el-option v-for="w in parentCandidates" :key="w.id" :label="w.name" :value="w.id" />
           </el-select>
         </el-form-item>
-        <el-row :gutter="16">
+        <el-row :gutter="16" v-if="form.level === 4">
           <el-col :span="12"><el-form-item label="负责人" required><el-input v-model="form.contact" /></el-form-item></el-col>
           <el-col :span="12"><el-form-item label="联系电话" required><el-input v-model="form.phone" /></el-form-item></el-col>
         </el-row>

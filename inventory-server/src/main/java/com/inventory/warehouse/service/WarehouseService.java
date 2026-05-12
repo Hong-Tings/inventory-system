@@ -113,18 +113,53 @@ public class WarehouseService {
     }
 
     private void enrichStats(Warehouse w) {
-        List<Inventory> invs = inventoryMapper.selectList(
-                new LambdaQueryWrapper<Inventory>().eq(Inventory::getWarehouseId, w.getId()));
-        int count = invs.stream().mapToInt(Inventory::getQuantity).sum();
-        w.setProductCount(count);
+        if (w.getLevel() != null && w.getLevel() < 4) {
+            // 非叶子节点：从所有子级 4 级仓库汇总
+            List<Long> leafIds = collectLeafIds(w.getId());
+            if (leafIds.isEmpty()) {
+                w.setProductCount(0);
+                w.setTotalAmount(BigDecimal.ZERO);
+                return;
+            }
+            List<Inventory> invs = inventoryMapper.selectList(
+                    new LambdaQueryWrapper<Inventory>().in(Inventory::getWarehouseId, leafIds));
+            int count = invs.stream().mapToInt(Inventory::getQuantity).sum();
+            w.setProductCount(count);
+            BigDecimal amount = BigDecimal.ZERO;
+            for (Inventory inv : invs) {
+                if (inv.getCostPrice() != null) {
+                    amount = amount.add(inv.getCostPrice().multiply(BigDecimal.valueOf(inv.getQuantity())));
+                }
+            }
+            w.setTotalAmount(amount);
+        } else {
+            // 4 级仓库：直接查库存
+            List<Inventory> invs = inventoryMapper.selectList(
+                    new LambdaQueryWrapper<Inventory>().eq(Inventory::getWarehouseId, w.getId()));
+            int count = invs.stream().mapToInt(Inventory::getQuantity).sum();
+            w.setProductCount(count);
+            BigDecimal amount = BigDecimal.ZERO;
+            for (Inventory inv : invs) {
+                if (inv.getCostPrice() != null) {
+                    amount = amount.add(inv.getCostPrice().multiply(BigDecimal.valueOf(inv.getQuantity())));
+                }
+            }
+            w.setTotalAmount(amount);
+        }
+    }
 
-        BigDecimal amount = BigDecimal.ZERO;
-        for (Inventory inv : invs) {
-            if (inv.getCostPrice() != null) {
-                amount = amount.add(inv.getCostPrice().multiply(BigDecimal.valueOf(inv.getQuantity())));
+    private List<Long> collectLeafIds(Long parentId) {
+        List<Warehouse> children = warehouseMapper.selectList(
+                new LambdaQueryWrapper<Warehouse>().eq(Warehouse::getParentId, parentId));
+        List<Long> ids = new java.util.ArrayList<>();
+        for (Warehouse child : children) {
+            if (child.getLevel() != null && child.getLevel() == 4) {
+                ids.add(child.getId());
+            } else {
+                ids.addAll(collectLeafIds(child.getId()));
             }
         }
-        w.setTotalAmount(amount);
+        return ids;
     }
 
     @Transactional(rollbackFor = Exception.class)
@@ -161,6 +196,16 @@ public class WarehouseService {
 
     @Transactional
     public void delete(Long id) {
+        Warehouse w = warehouseMapper.selectById(id);
+        if (w == null) throw new BusinessException("仓库不存在");
+
+        // 非叶子节点：检查是否有子仓库
+        if (w.getLevel() != null && w.getLevel() < 4) {
+            long childCount = warehouseMapper.selectCount(
+                    new LambdaQueryWrapper<Warehouse>().eq(Warehouse::getParentId, id));
+            if (childCount > 0) throw new BusinessException("该仓库存在子级仓库，请先删除子级仓库");
+        }
+
         // 检查库存
         long invCount = inventoryMapper.selectCount(
                 new LambdaQueryWrapper<Inventory>().eq(Inventory::getWarehouseId, id));

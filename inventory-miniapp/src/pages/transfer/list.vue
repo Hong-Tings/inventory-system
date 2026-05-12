@@ -22,7 +22,6 @@ async function fetchList() {
 function goCreate() { uni.navigateTo({ url: '/pages/transfer/create' }) }
 function goDetail(id) { uni.navigateTo({ url: `/pages/transfer/detail?id=${id}` }) }
 function onSearch() { fetchList() }
-function onInput(e) { if (!e.detail.value) fetchList() }
 
 onShow(fetchList)
 onPullDownRefresh(() => { fetchList(); uni.stopPullDownRefresh() })
@@ -34,8 +33,10 @@ onPullDownRefresh(() => { fetchList(); uni.stopPullDownRefresh() })
       <text class="page-title">库存调拨</text>
       <text class="add-btn" @click="goCreate">+ 新建</text>
     </view>
-    <view class="search-bar">
-      <input v-model="keyword" class="search-input" placeholder="搜索调拨单号" @confirm="onSearch" @input="onInput" />
+    <view class="search-bar" style="display:flex;gap:6px;">
+      <input v-model="keyword" class="search-input" placeholder="搜索调拨单号" style="flex:1;" @confirm="onSearch" />
+      <view class="search-btn" @click="onSearch">搜索</view>
+      <view class="reset-btn" @click="keyword = ''; fetchList()">重置</view>
     </view>
 
     <view v-if="loading">

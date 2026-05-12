@@ -27,7 +27,6 @@ async function fetchList() {
 
 function goDetail(id) { uni.navigateTo({ url: `/pages/stocktake/detail?id=${id}` }) }
 function onSearch() { fetchList() }
-function onInput(e) { if (!e.detail.value) fetchList() }
 
 onShow(fetchList)
 onPullDownRefresh(() => { fetchList(); uni.stopPullDownRefresh() })
@@ -40,8 +39,12 @@ onPullDownRefresh(() => { fetchList(); uni.stopPullDownRefresh() })
       <text class="add-btn" @click="uni.navigateTo({ url: '/pages/stocktake/create' })">+ 新建</text>
     </view>
 
-    <view class="search-bar" style="display:flex;gap:8px;">
-      <input v-model="keyword" class="search-input" placeholder="搜索盘点单号" style="flex:1;" @confirm="onSearch" @input="onInput" />
+    <view class="search-bar" style="display:flex;gap:6px;flex-wrap:wrap;">
+      <view style="display:flex;gap:6px;flex:1;min-width:200px;">
+        <input v-model="keyword" class="search-input" placeholder="搜索盘点单号" style="flex:1;" @confirm="onSearch" />
+        <view class="search-btn" @click="onSearch">搜索</view>
+        <view class="reset-btn" @click="keyword = ''; takeType = null; filterStatus = null; fetchList()">重置</view>
+      </view>
       <picker @change="e => { takeType = typeOptions[e.detail.value]?.v; fetchList() }" :range="typeOptions" range-key="l">
         <view class="filter-pill">{{ typeOptions.find(t => t.v === takeType)?.l }}</view>
       </picker>

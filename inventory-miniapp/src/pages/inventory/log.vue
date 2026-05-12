@@ -58,9 +58,10 @@ onPullDownRefresh(() => { fetchData(); uni.stopPullDownRefresh() })
       <text class="page-title">库存流水</text>
     </view>
     <view class="search-row">
-      <input v-model="keyword" class="search-input" placeholder="搜索商品名称" @confirm="onSearch" @input="onInput" />
-      <input v-model="orderKeyword" class="search-input" placeholder="搜索关联单号" @confirm="onSearch" @input="onInput" style="flex:0.8;" />
+      <input v-model="keyword" class="search-input" placeholder="商品名称/编码" @confirm="onSearch" style="flex:1;" />
+      <input v-model="orderKeyword" class="search-input" placeholder="关联单号" @confirm="onSearch" style="flex:0.8;" />
       <view class="search-btn" @click="onSearch">搜索</view>
+      <view class="reset-btn" @click="keyword = ''; orderKeyword = ''; fetchData()">重置</view>
     </view>
 
     <view v-if="loading" class="loading">加载中...</view>
@@ -99,4 +100,5 @@ onPullDownRefresh(() => { fetchData(); uni.stopPullDownRefresh() })
 .search-row { display: flex; gap: 8px; margin-bottom: 14px; }
 .search-btn { background: linear-gradient(135deg,#2e7d32,#43a047); color:#fff; border-radius:10px; padding:0 18px; font-size:13px; display:flex; align-items:center; white-space:nowrap; box-shadow:0 2px 8px rgba(46,125,50,0.2); }
 .type-dot { width:8px; height:8px; border-radius:50%; display:inline-block; }
+.reset-btn { background: #f5f5f5; color: #666; border-radius: 10px; padding: 0 16px; font-size: 13px; display: flex; align-items: center; white-space: nowrap; }
 </style>

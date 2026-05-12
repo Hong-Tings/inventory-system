@@ -50,6 +50,7 @@ onPullDownRefresh(() => { fetchData(); uni.stopPullDownRefresh() })
     <view style="display:flex;gap:8px;margin-bottom:10px;">
       <input v-model="keyword" class="search-input" placeholder="搜索名称" @confirm="onSearch" style="flex:1;" />
       <view class="pill-btn" @click="onSearch">搜索</view>
+      <view class="reset-btn" @click="keyword = ''; codeKeyword = ''; fetchData()">重置</view>
     </view>
     <view style="display:flex;gap:8px;margin-bottom:12px;">
       <input v-model="codeKeyword" class="search-input" placeholder="搜索编码" @confirm="onSearch" style="flex:2;" />

@@ -1,37 +1,52 @@
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import request, { downloadFile } from '../../api/request'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useUserStore } from '../../store/user'
 
 const userStore = useUserStore()
 const loading = ref(false)
-const treeData = ref<any[]>([])
+const fullTree = ref<any[]>([])
 const dialogVisible = ref(false)
 const parentCandidates = ref<any[]>([])
+const cascadeFilter = ref<number | undefined>(undefined)
 
 const query = ref({ keyword: '', name: '', status: undefined as number | undefined })
 const form = reactive<any>({ name: '', code: '', contact: '', phone: '', address: '', status: 1, remark: '', level: 4, parentId: undefined })
 
+const treeData = computed(() => {
+  if (!cascadeFilter.value || !fullTree.value.length) return fullTree.value
+  const filterNode = (nodes: any[], id: number): any[] => {
+    for (const n of nodes) {
+      if (n.id === id) return [{ ...n, children: undefined }]
+      if (n.children?.length) {
+        const found = filterNode(n.children, id)
+        if (found.length) return [{ ...n, children: found[0].children }]
+      }
+    }
+    return []
+  }
+  return filterNode(fullTree.value, cascadeFilter.value)
+})
+
 async function fetchTree() {
   loading.value = true
   try {
-    const params: Record<string, any> = {}
-    if (query.value.keyword) params.keyword = query.value.keyword
-    if (query.value.name) params.name = query.value.name
-    if (query.value.status !== undefined) params.status = query.value.status
-
     if (query.value.keyword) {
       const res = await request.get('/warehouse/search', { params: { keyword: query.value.keyword } })
-      treeData.value = res.data.data || []
+      fullTree.value = res.data.data || []
     } else {
       const res = await request.get('/warehouse/tree')
-      treeData.value = res.data.data || []
+      fullTree.value = res.data.data || []
     }
   } finally { loading.value = false }
 }
-function handleSearch() { fetchTree() }
-function handleReset() { query.value = { keyword: '', name: '', status: undefined }; fetchTree() }
+function handleSearch() { cascadeFilter.value = undefined; fetchTree() }
+function handleReset() {
+  query.value = { keyword: '', name: '', status: undefined }
+  cascadeFilter.value = undefined
+  fetchTree()
+}
 
 function openCreate(parent?: any) {
   Object.assign(form, { id: undefined, name: '', code: '', contact: '', phone: '', address: '', status: 1, remark: '' })
@@ -106,6 +121,15 @@ onMounted(fetchTree)
     </div>
 
     <div class="search-bar">
+      <el-cascader
+        v-model="cascadeFilter"
+        :options="fullTree"
+        :props="{ value: 'id', label: 'name', children: 'children', emitPath: false, checkStrictly: true }"
+        placeholder="按层级筛选"
+        clearable
+        style="width:200px"
+        @change="handleSearch"
+      />
       <el-input v-model="query.keyword" placeholder="搜索仓库名称/编码" clearable style="width:220px" @keyup.enter="handleSearch" @clear="handleSearch" />
       <el-input v-model="query.name" placeholder="仓库名称" clearable style="width:160px" @keyup.enter="handleSearch" @clear="handleSearch" />
       <el-select v-model="query.status" placeholder="状态" clearable style="width:120px" @change="handleSearch">

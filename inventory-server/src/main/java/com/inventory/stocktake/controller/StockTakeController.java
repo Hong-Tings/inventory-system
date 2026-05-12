@@ -11,9 +11,13 @@ import com.inventory.stocktake.entity.StockTakeItem;
 import com.inventory.stocktake.entity.StockTakeDetailExportVO;
 import com.inventory.stocktake.entity.StockTakeExportVO;
 import com.inventory.stocktake.service.StockTakeService;
+import com.alibaba.excel.EasyExcel;
+import com.alibaba.excel.write.metadata.WriteSheet;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.net.URLEncoder;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -102,8 +106,22 @@ public class StockTakeController {
             List<Long> idList = Arrays.stream(ids.split(",")).map(Long::parseLong).collect(Collectors.toList());
             list = list.stream().filter(s -> idList.contains(s.getId())).collect(Collectors.toList());
         }
-        List<StockTakeDetailExportVO> voList = stockTakeService.getExportDetailList(list);
-        ExcelUtil.export(response, voList, "盘点明细", StockTakeDetailExportVO.class);
+        // 按盘点单分组导出，每个单据一个 sheet
+        response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+        response.setCharacterEncoding("utf-8");
+        try {
+            String fileName = URLEncoder.encode("盘点明细", "UTF-8").replaceAll("\\+", "%20");
+            response.setHeader("Content-disposition", "attachment;filename*=utf-8''" + fileName + ".xlsx");
+            var excelWriter = EasyExcel.write(response.getOutputStream(), StockTakeDetailExportVO.class).build();
+            for (StockTake s : list) {
+                List<StockTakeDetailExportVO> sheetData = stockTakeService.getExportDetailList(List.of(s));
+                WriteSheet writeSheet = EasyExcel.writerSheet(s.getOrderNo()).build();
+                excelWriter.write(sheetData, writeSheet);
+            }
+            excelWriter.finish();
+        } catch (IOException e) {
+            throw new RuntimeException("导出失败", e);
+        }
     }
 
     @Operation(summary = "盘点调整")

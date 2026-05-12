@@ -1,10 +1,8 @@
 <script setup>
 import { ref } from 'vue'
 import { onShow, onPullDownRefresh } from '@dcloudio/uni-app'
-import request, { downloadFile } from '@/api/request'
+import request from '@/api/request'
 import FloatingHome from '@/components/FloatingHome'
-
-function handleExport() { downloadFile('/stock-take/export', '库存盘点.xlsx') }
 
 const list = ref([])
 const loading = ref(false)
@@ -38,7 +36,6 @@ onPullDownRefresh(() => { fetchList(); uni.stopPullDownRefresh() })
   <view class="page">
     <view class="page-bar">
       <text class="page-title">库存盘点</text>
-      <text class="export-btn" style="margin-right:6px;" @click="handleExport">导出</text>
       <text class="add-btn" @click="uni.navigateTo({ url: '/pages/stocktake/create' })">+ 新建</text>
     </view>
 
@@ -100,5 +97,4 @@ onPullDownRefresh(() => { fetchList(); uni.stopPullDownRefresh() })
 .filter-pill { background:#fff; border-radius:10px; padding:12px 14px; font-size:13px; white-space:nowrap; box-shadow:0 1px 4px rgba(0,0,0,0.04); }
 .search-btn { background: #2e7d32; color: #fff; border-radius: 10px; padding: 0 16px; font-size: 13px; display: flex; align-items: center; white-space: nowrap; }
 .reset-btn { background: #f5f5f5; color: #666; border-radius: 10px; padding: 0 16px; font-size: 13px; display: flex; align-items: center; white-space: nowrap; }
-.export-btn { background: #1565c0; color: #fff; border-radius: 10px; padding: 0 16px; font-size: 13px; display: inline-flex; align-items: center; white-space: nowrap; height: 36px; }
 </style>

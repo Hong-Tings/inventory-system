@@ -1,10 +1,8 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { onPullDownRefresh } from '@dcloudio/uni-app'
-import request, { downloadFile } from '@/api/request'
+import request from '@/api/request'
 import FloatingHome from '@/components/FloatingHome'
-
-function handleExport() { downloadFile('/product/export', '商品管理.xlsx') }
 
 const list = ref([])
 const loading = ref(false)
@@ -49,10 +47,6 @@ onPullDownRefresh(() => { fetchData(); uni.stopPullDownRefresh() })
 
 <template>
   <view class="page" style="padding:12px;height:100vh;display:flex;flex-direction:column;">
-    <view class="page-bar" style="margin-bottom:10px;">
-      <text class="page-title">商品管理</text>
-      <text class="export-btn" @click="handleExport">导出</text>
-    </view>
     <view style="display:flex;gap:8px;margin-bottom:10px;">
       <input v-model="keyword" class="search-input" placeholder="搜索名称" @confirm="onSearch" style="flex:1;" />
       <view class="pill-btn" @click="onSearch">搜索</view>
@@ -105,5 +99,4 @@ onPullDownRefresh(() => { fetchData(); uni.stopPullDownRefresh() })
 .pill-btn.active { color: #2e7d32; font-weight: 600; }
 .search-btn { background: #2e7d32; color: #fff; border-radius: 10px; padding: 0 16px; font-size: 13px; display: flex; align-items: center; white-space: nowrap; }
 .reset-btn { background: #f5f5f5; color: #666; border-radius: 10px; padding: 0 16px; font-size: 13px; display: flex; align-items: center; white-space: nowrap; }
-.export-btn { background: #1565c0; color: #fff; border-radius: 10px; padding: 0 16px; font-size: 13px; display: inline-flex; align-items: center; white-space: nowrap; height: 36px; margin-left: 8px; }
 </style>

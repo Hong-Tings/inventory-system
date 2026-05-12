@@ -1,11 +1,9 @@
 <script setup>
 import { ref, reactive, computed } from 'vue'
 import { onShow, onPullDownRefresh } from '@dcloudio/uni-app'
-import request, { downloadFile } from '@/api/request'
+import request from '@/api/request'
 
 const loading = ref(false)
-
-function handleExport() { downloadFile('/inventory/export', '库存查询.xlsx') }
 const warehouseTree = ref([])
 const allList = ref([])
 const keyword = ref('')
@@ -164,7 +162,6 @@ onPullDownRefresh(() => { fetchData(); uni.stopPullDownRefresh() })
   <view class="page">
     <view class="page-bar">
       <text class="page-title">库存查询</text>
-      <text class="export-btn" style="margin-right:6px;" @click="handleExport">导出</text>
       <text class="nav-link" @click="uni.navigateTo({ url: '/pages/inventory/log' })">流水 ›</text>
     </view>
     <view class="search-bar" style="display:flex;gap:6px;flex-wrap:wrap;">
@@ -272,7 +269,6 @@ onPullDownRefresh(() => { fetchData(); uni.stopPullDownRefresh() })
 .filter-pill { background: #fff; border-radius: 10px; padding: 12px 14px; font-size: 13px; white-space: nowrap; box-shadow: 0 1px 4px rgba(0,0,0,0.04); }
 .btn-search { background: #2e7d32; color: #fff; border-radius: 10px; padding: 12px 16px; font-size: 13px; white-space: nowrap; }
 .btn-reset { background: #f5f5f5; color: #666; border-radius: 10px; padding: 12px 16px; font-size: 13px; white-space: nowrap; }
-.export-btn { background: #1565c0; color: #fff; border-radius: 10px; padding: 0 16px; font-size: 13px; display: inline-flex; align-items: center; white-space: nowrap; height: 36px; }
 .loading, .empty { text-align: center; color: #999; padding: 40px 0; }
 .tree-wrap { background: #fff; border-radius: 8px; overflow: hidden; }
 .tree-row { border-bottom: 1px solid #f5f5f5; }

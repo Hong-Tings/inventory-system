@@ -60,24 +60,6 @@ function request(method, url, data, params) {
   })
 }
 
-export function downloadFile(url, filename) {
-  const token = uni.getStorageSync('token')
-  uni.showLoading({ title: '导出中...' })
-  uni.downloadFile({
-    url: BASE_URL + url,
-    header: token ? { Authorization: 'Bearer ' + token } : {},
-    success: (res) => {
-      if (res.statusCode === 200) {
-        uni.openDocument({ filePath: res.tempFilePath, showMenu: true })
-      } else {
-        uni.showToast({ title: '导出失败', icon: 'none' })
-      }
-    },
-    fail: () => uni.showToast({ title: '导出失败', icon: 'none' }),
-    complete: () => uni.hideLoading(),
-  })
-}
-
 export default {
   get(url, config) {
     return request('GET', url, null, config?.params)

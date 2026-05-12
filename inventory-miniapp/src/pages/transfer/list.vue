@@ -1,15 +1,13 @@
 <script setup>
 import { ref } from 'vue'
 import { onShow, onPullDownRefresh } from '@dcloudio/uni-app'
-import request, { downloadFile } from '@/api/request'
+import request from '@/api/request'
 import FloatingHome from '@/components/FloatingHome'
 
 const list = ref([])
 const loading = ref(false)
 const keyword = ref('')
 const statusMap = { 0: '草稿', 1: '已完成', 2: '已取消', 4: '待审批' }
-
-function handleExport() { downloadFile('/transfer/export', '库存调拨.xlsx') }
 
 async function fetchList() {
   loading.value = true
@@ -33,7 +31,6 @@ onPullDownRefresh(() => { fetchList(); uni.stopPullDownRefresh() })
   <view class="page">
     <view class="page-bar">
       <text class="page-title">库存调拨</text>
-      <text class="export-btn" style="margin-right:6px;" @click="handleExport">导出</text>
       <text class="add-btn" @click="goCreate">+ 新建</text>
     </view>
     <view class="search-bar" style="display:flex;gap:6px;">
@@ -83,5 +80,4 @@ onPullDownRefresh(() => { fetchList(); uni.stopPullDownRefresh() })
 <style scoped>
 .search-btn { background: #2e7d32; color: #fff; border-radius: 10px; padding: 0 16px; font-size: 13px; display: flex; align-items: center; white-space: nowrap; }
 .reset-btn { background: #f5f5f5; color: #666; border-radius: 10px; padding: 0 16px; font-size: 13px; display: flex; align-items: center; white-space: nowrap; }
-.export-btn { background: #1565c0; color: #fff; border-radius: 10px; padding: 0 16px; font-size: 13px; display: inline-flex; align-items: center; white-space: nowrap; height: 36px; }
 </style>

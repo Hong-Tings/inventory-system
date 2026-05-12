@@ -1,10 +1,8 @@
 <script setup>
 import { ref, reactive, computed } from 'vue'
 import { onShow, onPullDownRefresh } from '@dcloudio/uni-app'
-import request, { downloadFile } from '@/api/request'
+import request from '@/api/request'
 import FloatingHome from '@/components/FloatingHome'
-
-function handleExport() { downloadFile('/warehouse/export', '仓库.xlsx') }
 
 const loading = ref(false)
 const warehouseTree = ref([])
@@ -62,7 +60,6 @@ onPullDownRefresh(() => { fetchData(); uni.stopPullDownRefresh() })
   <view class="page">
     <view class="page-bar">
       <text class="page-title">仓库管理</text>
-      <text class="export-btn" style="margin-right:6px;" @click="handleExport">导出</text>
       <button class="add-btn" @click="goCreate">+ 新建</button>
     </view>
     <view class="search-bar" style="display:flex;gap:6px;">
@@ -129,5 +126,4 @@ onPullDownRefresh(() => { fetchData(); uni.stopPullDownRefresh() })
 .node-status.off { background: #f5f5f5; color: #999; }
 .node-meta { display: flex; gap: 12px; font-size: 11px; color: #999; margin-top: 2px; }
 .node-meta .addr { max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.export-btn { background: #1565c0; color: #fff; border-radius: 10px; padding: 0 16px; font-size: 13px; display: inline-flex; align-items: center; white-space: nowrap; height: 36px; }
 </style>

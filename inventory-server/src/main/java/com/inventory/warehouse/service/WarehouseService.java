@@ -185,6 +185,12 @@ public class WarehouseService {
                 if (parent.getLevel() == null || warehouse.getLevel() != parent.getLevel() + 1) {
                     throw new BusinessException("仓库层级不连续，子级层级必须为父级层级+1");
                 }
+                // 有库存的仓库不可再建子级（库存归属会混乱）
+                long invCount = inventoryMapper.selectCount(
+                        new LambdaQueryWrapper<Inventory>().eq(Inventory::getWarehouseId, warehouse.getParentId()));
+                if (invCount > 0) {
+                    throw new BusinessException("该仓库存在库存记录，不可新建子级仓库，请先清空库存");
+                }
             }
         }
         warehouseMapper.insert(warehouse);

@@ -1,6 +1,5 @@
 package com.inventory.auth;
 
-import cn.dev33.satoken.config.SaLoginConfig;
 import cn.dev33.satoken.stp.SaTokenInfo;
 import cn.dev33.satoken.stp.StpUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
@@ -31,11 +30,7 @@ public class AuthController {
         if (!BCrypt.checkpw(form.getPassword(), user.getPassword())) return R.fail("用户名或密码错误");
         if (user.getStatus() == 0) return R.fail("账号已被禁用");
 
-        SaLoginConfig loginConfig = new SaLoginConfig().setIsConcurrent(false);
-        if (Boolean.TRUE.equals(form.getRememberMe())) {
-            loginConfig.setTimeout(60 * 60 * 24 * 30); // 记住我：30天
-        }
-        StpUtil.login(user.getId(), loginConfig);
+        StpUtil.login(user.getId());
         SaTokenInfo tokenInfo = StpUtil.getTokenInfo();
 
         Map<String, Object> data = new HashMap<>();

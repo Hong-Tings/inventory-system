@@ -64,7 +64,7 @@ class WarehouseServiceTest {
 
         // 调用 page 触发 enrichStats
         var page = new com.baomidou.mybatisplus.extension.plugins.pagination.Page<Warehouse>(1, 10);
-        service.page(page, null, null, null, null, null);
+        service.page(page, null, null, null, null, null, null, null);
 
         // 验证：商品总数 = 100 + 50 = 150
         assertEquals(150, w.getProductCount().intValue());

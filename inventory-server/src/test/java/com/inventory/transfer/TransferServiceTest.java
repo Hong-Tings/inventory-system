@@ -48,12 +48,12 @@ class TransferServiceTest {
         );
     }
 
-    private InventoryTransfer createDraft() {
+    private InventoryTransfer createTransfer(int status) {
         InventoryTransfer t = new InventoryTransfer();
         t.setId(1L);
         t.setFromWarehouseId(1L);
         t.setToWarehouseId(2L);
-        t.setStatus(OrderStatus.DRAFT);
+        t.setStatus(status);
 
         List<InventoryTransferItem> items = new ArrayList<>();
         InventoryTransferItem item = new InventoryTransferItem();
@@ -64,9 +64,15 @@ class TransferServiceTest {
         return t;
     }
 
+    private InventoryTransfer createDraft() {
+        return createTransfer(OrderStatus.DRAFT);
+    }
+
     @Test
-    void submit_shouldDeductFromSourceAndAddToDestination() {
-        when(transferMapper.selectById(1L)).thenReturn(createDraft());
+    void submitThenApprove_shouldDeductFromSourceAndAddToDestination() {
+        when(transferMapper.selectById(1L))
+            .thenReturn(createDraft())
+            .thenReturn(createTransfer(OrderStatus.PENDING));
         when(transferItemMapper.selectList(any())).thenReturn(createDraft().getItems());
 
         Inventory source = new Inventory();
@@ -78,15 +84,19 @@ class TransferServiceTest {
         when(inventoryMapper.selectList(any())).thenReturn(List.of());
 
         service.submit(1L);
+        verify(transferMapper).updateById(argThat(t -> t.getStatus() == OrderStatus.PENDING));
 
+        service.approve(1L);
         verify(inventoryMapper).updateById(argThat(i -> i.getQuantity() == 30));
         verify(inventoryMapper).insert(argThat(i ->
             i.getWarehouseId() == 2L && i.getQuantity() == 20));
     }
 
     @Test
-    void submit_shouldThrowWhenStockInsufficient() {
-        when(transferMapper.selectById(1L)).thenReturn(createDraft());
+    void approve_shouldThrowWhenStockInsufficient() {
+        when(transferMapper.selectById(1L))
+            .thenReturn(createDraft())
+            .thenReturn(createTransfer(OrderStatus.PENDING));
         when(transferItemMapper.selectList(any())).thenReturn(createDraft().getItems());
 
         Inventory low = new Inventory();
@@ -95,7 +105,24 @@ class TransferServiceTest {
 
         when(inventoryMapper.selectOne(any())).thenReturn(low);
 
-        assertThrows(BusinessException.class, () -> service.submit(1L));
+        service.submit(1L);
+
+        assertThrows(BusinessException.class, () -> service.approve(1L));
+    }
+
+    @Test
+    void testRejectReturnsToDraft() {
+        when(transferMapper.selectById(1L))
+            .thenReturn(createDraft())
+            .thenReturn(createTransfer(OrderStatus.PENDING));
+
+        service.submit(1L);
+        verify(transferMapper).updateById(argThat(t -> t.getStatus() == OrderStatus.PENDING));
+
+        service.reject(1L, "价格不合理");
+        verify(transferMapper).updateById(argThat(t ->
+            t.getStatus() == OrderStatus.DRAFT && t.getRemark().contains("驳回原因")
+        ));
     }
 
     @Test

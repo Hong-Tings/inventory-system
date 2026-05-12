@@ -50,11 +50,11 @@ class SalesOrderServiceTest {
         );
     }
 
-    private SalesOrder createDraftOrder() {
+    private SalesOrder createOrder(int status) {
         SalesOrder order = new SalesOrder();
         order.setId(1L);
         order.setWarehouseId(1L);
-        order.setStatus(OrderStatus.DRAFT);
+        order.setStatus(status);
         List<SalesOrderItem> items = new ArrayList<>();
         SalesOrderItem item = new SalesOrderItem();
         item.setProductId(1L);
@@ -66,9 +66,15 @@ class SalesOrderServiceTest {
         return order;
     }
 
+    private SalesOrder createDraftOrder() {
+        return createOrder(OrderStatus.DRAFT);
+    }
+
     @Test
-    void submit_shouldDeductFromBatch() {
-        when(salesOrderMapper.selectById(1L)).thenReturn(createDraftOrder());
+    void submitThenApprove_shouldDeductFromBatch() {
+        when(salesOrderMapper.selectById(1L))
+            .thenReturn(createDraftOrder())
+            .thenReturn(createOrder(OrderStatus.PENDING));
         when(salesOrderItemMapper.selectList(any())).thenReturn(createDraftOrder().getItems());
 
         Inventory batch = new Inventory();
@@ -78,13 +84,17 @@ class SalesOrderServiceTest {
         when(inventoryMapper.selectList(any())).thenReturn(List.of(batch));
 
         service.submit(1L);
+        verify(salesOrderMapper).updateById(argThat(o -> o.getStatus() == OrderStatus.PENDING));
 
+        service.approve(1L);
         verify(inventoryMapper).updateById(argThat(i -> i.getQuantity() == 20));
     }
 
     @Test
-    void submit_shouldThrowWhenStockInsufficient() {
-        when(salesOrderMapper.selectById(1L)).thenReturn(createDraftOrder());
+    void approve_shouldThrowWhenStockInsufficient() {
+        when(salesOrderMapper.selectById(1L))
+            .thenReturn(createDraftOrder())
+            .thenReturn(createOrder(OrderStatus.PENDING));
         when(salesOrderItemMapper.selectList(any())).thenReturn(createDraftOrder().getItems());
 
         Inventory low = new Inventory();
@@ -93,8 +103,25 @@ class SalesOrderServiceTest {
 
         when(inventoryMapper.selectList(any())).thenReturn(List.of(low));
 
-        BusinessException ex = assertThrows(BusinessException.class, () -> service.submit(1L));
+        service.submit(1L);
+
+        BusinessException ex = assertThrows(BusinessException.class, () -> service.approve(1L));
         assertEquals("商品库存不足", ex.getMessage());
+    }
+
+    @Test
+    void testRejectReturnsToDraft() {
+        when(salesOrderMapper.selectById(1L))
+            .thenReturn(createDraftOrder())
+            .thenReturn(createOrder(OrderStatus.PENDING));
+
+        service.submit(1L);
+        verify(salesOrderMapper).updateById(argThat(o -> o.getStatus() == OrderStatus.PENDING));
+
+        service.reject(1L, "价格不合理");
+        verify(salesOrderMapper).updateById(argThat(o ->
+            o.getStatus() == OrderStatus.DRAFT && o.getRemark().contains("驳回原因")
+        ));
     }
 
     @Test

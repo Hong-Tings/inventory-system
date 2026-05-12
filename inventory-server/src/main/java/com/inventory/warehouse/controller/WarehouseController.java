@@ -25,6 +25,24 @@ public class WarehouseController {
 
     private final WarehouseService warehouseService;
 
+    @Operation(summary = "获取仓库树形结构")
+    @GetMapping("/tree")
+    public R<List<Warehouse>> tree() {
+        return R.ok(warehouseService.tree());
+    }
+
+    @Operation(summary = "获取子级仓库列表")
+    @GetMapping("/children/{parentId}")
+    public R<List<Warehouse>> children(@PathVariable Long parentId) {
+        return R.ok(warehouseService.children(parentId));
+    }
+
+    @Operation(summary = "搜索仓库")
+    @GetMapping("/search")
+    public R<List<Warehouse>> search(@RequestParam String keyword) {
+        return R.ok(warehouseService.search(keyword));
+    }
+
     @Operation(summary = "查询所有启用的仓库")
     @GetMapping("/list")
     public R<List<Warehouse>> list() {
@@ -40,8 +58,10 @@ public class WarehouseController {
             @RequestParam(required = false) String contact,
             @RequestParam(required = false) String phone,
             @RequestParam(required = false) String address,
-            @RequestParam(required = false) Integer status) {
-        return R.ok(PageResult.of(warehouseService.page(new Page<>(page, size), name, contact, phone, address, status)));
+            @RequestParam(required = false) Integer status,
+            @RequestParam(required = false) Integer level,
+            @RequestParam(required = false) Long parentId) {
+        return R.ok(PageResult.of(warehouseService.page(new Page<>(page, size), name, contact, phone, address, status, level, parentId)));
     }
 
     @Operation(summary = "获取仓库详情")

@@ -70,27 +70,33 @@ class PurchaseOrderServiceTest {
     }
 
     @Test
-    void submit_shouldCreateInventoryAndSetCostPrice() {
-        when(purchaseOrderMapper.selectById(1L)).thenReturn(createOrder(OrderStatus.DRAFT));
+    void submitThenApprove_shouldCreateInventory() {
+        when(purchaseOrderMapper.selectById(1L))
+            .thenReturn(createOrder(OrderStatus.DRAFT))
+            .thenReturn(createOrder(OrderStatus.PENDING));
         when(purchaseOrderItemMapper.selectList(any())).thenReturn(createOrder(OrderStatus.DRAFT).getItems());
         // 无库存记录
         when(inventoryMapper.selectList(any())).thenReturn(new ArrayList<>());
         // 首次查询批次不存在
         when(inventoryMapper.selectOne(any())).thenReturn(null);
 
+        // 提交后为待审批
         service.submit(1L);
+        verify(purchaseOrderMapper).updateById(argThat(o -> o.getStatus() == OrderStatus.PENDING));
 
-        // 验证：insert 库存记录
+        // 审核通过后创建库存记录
+        service.approve(1L);
         verify(inventoryMapper).insert(argThat(inv ->
             inv.getQuantity() == 100 && inv.getProductId() == 1L && inv.getWarehouseId() == 1L
         ));
-        // 验证：状态改为已入库
         verify(purchaseOrderMapper).updateById(argThat(o -> o.getStatus() == OrderStatus.CONFIRMED));
     }
 
     @Test
-    void submit_withExistingInventory_shouldIncreaseQuantity() {
-        when(purchaseOrderMapper.selectById(1L)).thenReturn(createOrder(OrderStatus.DRAFT));
+    void submitThenApprove_withExistingInventory_shouldIncreaseQuantity() {
+        when(purchaseOrderMapper.selectById(1L))
+            .thenReturn(createOrder(OrderStatus.DRAFT))
+            .thenReturn(createOrder(OrderStatus.PENDING));
         when(purchaseOrderItemMapper.selectList(any())).thenReturn(createOrder(OrderStatus.DRAFT).getItems());
 
         Inventory existing = new Inventory();
@@ -104,6 +110,8 @@ class PurchaseOrderServiceTest {
         when(inventoryMapper.selectOne(any())).thenReturn(existing);
 
         service.submit(1L);
+
+        service.approve(1L);
 
         // 验证：updateById 至少被调用一次，且数量从50→150
         verify(inventoryMapper, atLeastOnce()).updateById(argThat(inv ->
@@ -125,6 +133,21 @@ class PurchaseOrderServiceTest {
     }
 
     @Test
+    void testRejectReturnsToDraft() {
+        when(purchaseOrderMapper.selectById(1L))
+            .thenReturn(createOrder(OrderStatus.DRAFT))
+            .thenReturn(createOrder(OrderStatus.PENDING));
+
+        service.submit(1L);
+        verify(purchaseOrderMapper).updateById(argThat(o -> o.getStatus() == OrderStatus.PENDING));
+
+        service.reject(1L, "价格不合理");
+        verify(purchaseOrderMapper).updateById(argThat(o ->
+            o.getStatus() == OrderStatus.DRAFT && o.getRemark().contains("驳回原因")
+        ));
+    }
+
+    @Test
     void cancel_shouldReverseInventory() {
         PurchaseOrder confirmed = createOrder(OrderStatus.CONFIRMED);
         when(purchaseOrderMapper.selectById(1L)).thenReturn(confirmed);
@@ -139,7 +162,7 @@ class PurchaseOrderServiceTest {
 
         service.cancel(1L);
 
-        verify(inventoryMapper).updateById(argThat(i -> i.getQuantity() == 0));
+        verify(inventoryMapper, atLeastOnce()).updateById(argThat(i -> i.getQuantity() == 0));
     }
 
     @Test

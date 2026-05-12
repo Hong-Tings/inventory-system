@@ -10,6 +10,7 @@ const submitting = ref(false)
 
 const form = ref({
   name: '', code: '', contact: '', phone: '', address: '', remark: '',
+  level: 4, parentId: null,
 })
 
 onLoad((query) => {
@@ -55,7 +56,13 @@ async function handleSubmit() {
       </view>
       <view class="form-item">
         <text class="label">仓库编码</text>
-        <input v-model="form.code" class="input" placeholder="请输入仓库编码" />
+        <input v-model="form.code" class="input" placeholder="自动生成" :disabled="!form.code" />
+      </view>
+      <view class="form-item">
+        <text class="label">层级</text>
+        <picker @change="e => form.level = [1,2,3,4][e.detail.value]" :range="['1级-大区','2级-区域','3级-城市','4级-仓库']">
+          <view class="picker">{{ ['','1级-大区','2级-区域','3级-城市','4级-仓库'][form.level] || '请选择层级' }}</view>
+        </picker>
       </view>
       <view class="form-item">
         <text class="label">联系人</text>

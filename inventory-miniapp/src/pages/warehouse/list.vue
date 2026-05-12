@@ -46,6 +46,8 @@ onPullDownRefresh(() => { fetchList(); uni.stopPullDownRefresh() })
         </view>
         <view class="card-body">
           <text>编码: {{ item.code || '-' }}</text>
+          <text>层级: {{ ['','大区','区域','城市','仓库'][item.level] || '-' }}</text>
+          <text>上级: {{ item.parentName || '-' }}</text>
           <text>联系人: {{ item.contact || '-' }}</text>
           <text>电话: {{ item.phone || '-' }}</text>
           <text>地址: {{ item.address || '-' }}</text>

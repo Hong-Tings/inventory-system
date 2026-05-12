@@ -20,6 +20,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 import cn.hutool.core.date.DateUtil;
 import java.util.Date;
 
@@ -47,23 +49,65 @@ public class WarehouseService {
 
     public Warehouse getById(Long id) { return warehouseMapper.selectById(id); }
 
+    public List<Warehouse> tree() {
+        List<Warehouse> all = warehouseMapper.selectList(new LambdaQueryWrapper<Warehouse>()
+                .eq(Warehouse::getStatus, 1).orderByAsc(Warehouse::getId));
+        Map<Long, Warehouse> map = all.stream().collect(Collectors.toMap(Warehouse::getId, w -> w));
+        List<Warehouse> roots = new java.util.ArrayList<>();
+        for (Warehouse w : all) {
+            if (w.getParentId() == null) {
+                roots.add(w);
+            } else {
+                Warehouse parent = map.get(w.getParentId());
+                if (parent != null) {
+                    if (parent.getChildren() == null) parent.setChildren(new java.util.ArrayList<>());
+                    parent.getChildren().add(w);
+                }
+            }
+        }
+        return roots;
+    }
+
+    public List<Warehouse> children(Long parentId) {
+        return warehouseMapper.selectList(new LambdaQueryWrapper<Warehouse>()
+                .eq(Warehouse::getParentId, parentId)
+                .eq(Warehouse::getStatus, 1)
+                .orderByAsc(Warehouse::getId));
+    }
+
+    public List<Warehouse> search(String keyword) {
+        return warehouseMapper.selectList(new LambdaQueryWrapper<Warehouse>()
+                .eq(Warehouse::getStatus, 1)
+                .and(w -> w.like(Warehouse::getName, keyword).or().like(Warehouse::getCode, keyword))
+                .orderByAsc(Warehouse::getId));
+    }
+
     public List<Warehouse> listAll() {
         List<Warehouse> list = warehouseMapper.selectList(new LambdaQueryWrapper<Warehouse>()
-                .eq(Warehouse::getStatus, 1).orderByAsc(Warehouse::getId));
+                .eq(Warehouse::getStatus, 1).eq(Warehouse::getLevel, 4).orderByAsc(Warehouse::getId));
         for (Warehouse w : list) enrichStats(w);
         return list;
     }
 
-    public Page<Warehouse> page(Page<Warehouse> page, String name, String contact, String phone, String address, Integer status) {
+    public Page<Warehouse> page(Page<Warehouse> page, String name, String contact, String phone,
+                                String address, Integer status, Integer level, Long parentId) {
         LambdaQueryWrapper<Warehouse> wrapper = new LambdaQueryWrapper<Warehouse>()
                 .like(name != null, Warehouse::getName, name)
                 .like(contact != null, Warehouse::getContact, contact)
                 .like(phone != null, Warehouse::getPhone, phone)
                 .like(address != null, Warehouse::getAddress, address)
                 .eq(status != null, Warehouse::getStatus, status)
+                .eq(level != null, Warehouse::getLevel, level)
+                .eq(parentId != null, Warehouse::getParentId, parentId)
                 .orderByDesc(Warehouse::getId);
         Page<Warehouse> result = warehouseMapper.selectPage(page, wrapper);
-        for (Warehouse w : result.getRecords()) enrichStats(w);
+        for (Warehouse w : result.getRecords()) {
+            enrichStats(w);
+            if (w.getParentId() != null) {
+                Warehouse parent = warehouseMapper.selectById(w.getParentId());
+                if (parent != null) w.setParentName(parent.getName());
+            }
+        }
         return result;
     }
 
@@ -84,7 +128,9 @@ public class WarehouseService {
 
     @Transactional(rollbackFor = Exception.class)
     public void save(Warehouse warehouse) {
-        warehouse.setCode(generateWarehouseCode());
+        if (warehouse.getLevel() == null || warehouse.getLevel() == 4) {
+            warehouse.setCode(generateWarehouseCode());
+        }
         warehouseMapper.insert(warehouse);
     }
 

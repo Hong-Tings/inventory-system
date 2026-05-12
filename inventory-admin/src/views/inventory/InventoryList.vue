@@ -62,6 +62,20 @@ function buildTreeWithStock(nodes: any[]): any[] {
   })
 }
 
+// 将仓库树展平为下拉选项（含层级路径）
+const whOptions = computed(() => {
+  const result: any[] = []
+  function walk(nodes: any[], prefix = '') {
+    for (const n of nodes) {
+      const path = prefix ? prefix + ' / ' + n.name : n.name
+      result.push({ id: n.id, name: n.name, path })
+      if (n.children?.length) walk(n.children, path)
+    }
+  }
+  walk(warehouseTree.value)
+  return result
+})
+
 // 当级联选择了仓库时，裁剪树只显示该仓库及其子节点
 function pruneTree(nodes: any[], targetId: number): any[] | null {
   for (const n of nodes) {
@@ -116,17 +130,9 @@ onMounted(() => { fetchWarehouseTree(); fetchData() })
 
     <div class="search-bar">
       <el-input v-model="query.productName" placeholder="商品名称/编码" clearable style="width:200px" @keyup.enter="handleSearch" @clear="handleSearch" />
-      <el-tree-select
-        v-model="query.warehouseId"
-        :data="warehouseTree"
-        :props="{ label: 'name', children: 'children' }"
-        node-key="id"
-        placeholder="全部仓库"
-        clearable
-        filterable
-        style="width:220px"
-        @change="fetchData"
-      />
+      <el-select v-model="query.warehouseId" placeholder="全部仓库" clearable filterable style="width:220px" @change="fetchData">
+        <el-option v-for="opt in whOptions" :key="opt.id" :label="opt.path" :value="opt.id" />
+      </el-select>
       <el-button type="primary" @click="handleSearch">查询</el-button>
       <el-button @click="handleReset">重置</el-button>
     </div>

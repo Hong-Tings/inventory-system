@@ -165,7 +165,7 @@ onMounted(fetchTree)
         <el-table-column label="操作" min-width="280" fixed="right">
           <template #default="{ row }">
             <el-button size="small" @click="openEdit(row)">编辑</el-button>
-            <el-button v-if="row.level < 4 && (!row.productCount || row.productCount === 0)" size="small" type="primary" @click="openCreate(row)">+ 新增子级</el-button>
+            <el-button v-if="row.level < 4" size="small" type="primary" @click="openCreate(row)">+ 新增子级</el-button>
             <el-button size="small" :type="row.status === 1 ? 'warning' : 'success'" @click="handleToggleStatus(row)">{{ row.status === 1 ? '停用' : '启用' }}</el-button>
             <el-button v-if="userStore.isAdmin" size="small" type="danger" @click="handleDelete(row)">作废</el-button>
           </template>

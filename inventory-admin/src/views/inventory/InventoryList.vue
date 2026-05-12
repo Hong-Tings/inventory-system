@@ -35,23 +35,24 @@ function handleSearch() { query.page = 1; fetchData() }
 function handleReset() { query.productName = ''; query.warehouseId = undefined; handleSearch() }
 function handleExport() { downloadFile('/inventory/export', '库存查询.xlsx') }
 
-// 从树中递归构建仓库名映射
-function buildNameMap(nodes: any[], map: Record<number, string> = {}) {
+// 递归构建仓库层级路径映射（如 "华东仓储中心 > 浦东仓管区 > 浦东主仓"）
+function buildPathMap(nodes: any[], prefix = '', map: Record<number, string> = {}) {
   for (const n of nodes) {
-    map[n.id] = n.name
-    if (n.children?.length) buildNameMap(n.children, map)
+    const path = prefix ? prefix + ' > ' + n.name : n.name
+    map[n.id] = path
+    if (n.children?.length) buildPathMap(n.children, path, map)
   }
   return map
 }
 
 // 按仓库分组
 const grouped = computed(() => {
-  const nameMap = buildNameMap(warehouseTree.value)
-  const map = new Map<number, { wId: number; wName: string; items: Inventory[] }>()
+  const pathMap = buildPathMap(warehouseTree.value)
+  const map = new Map<number, { wId: number; wName: string; path: string; items: Inventory[] }>()
   for (const item of allList.value) {
     const wid = item.warehouseId
     if (!map.has(wid)) {
-      map.set(wid, { wId: wid, wName: nameMap[wid] || '未知仓库', items: [] })
+      map.set(wid, { wId: wid, wName: pathMap[wid]?.split(' > ').pop() || '未知仓库', path: pathMap[wid] || '', items: [] })
     }
     map.get(wid)!.items.push(item)
   }
@@ -112,36 +113,32 @@ onMounted(() => { fetchWarehouseTree(); fetchData() })
           <div class="warehouse-title">
             <svg viewBox="0 0 24 24" width="20" height="20" fill="#409eff"><path d="M19 8h-1V3H6v5H5c-1.66 0-3 1.34-3 3v6h4v4h12v-4h4v-6c0-1.66-1.34-3-3-3zM8 5h8v3H8V5zm8 14H8v-4h8v4zm2-4v-2H6v2H4v-4c0-.55.45-1 1-1h14c.55 0 1 .45 1 1v4h-2z"/></svg>
             <span>{{ group.wName }}</span>
+            <span class="warehouse-path">{{ group.path }}</span>
             <span class="warehouse-stats">
-              {{ group.items.length }} 种商品 &nbsp;|&nbsp; 小计：¥{{ warehouseSubtotal(group.items).amount.toFixed(2) }}
+              {{ group.items.length }} 种商品 · ¥{{ warehouseSubtotal(group.items).amount.toFixed(2) }}
             </span>
           </div>
         </div>
 
         <el-table :data="group.items" stripe border>
-          <el-table-column prop="productCode" label="编码" width="130" />
-          <el-table-column prop="productName" label="商品名称" min-width="160" />
-          <el-table-column prop="batchNo" label="批次" width="100" />
-          <el-table-column prop="quantity" label="库存数量" sortable width="100" align="center">
+          <el-table-column prop="productCode" label="编码" width="110" />
+          <el-table-column prop="productName" label="商品名称" min-width="140" />
+          <el-table-column prop="batchNo" label="批次" width="90" />
+          <el-table-column prop="quantity" label="数量" sortable width="80" align="center">
             <template #default="{ row }">
               <span :style="{ color: row.quantity <= 0 ? '#f56c6c' : '#303133', fontWeight: 600 }">{{ row.quantity }}</span>
             </template>
           </el-table-column>
-          <el-table-column label="成本均价" width="140" align="right">
+          <el-table-column label="均价" width="110" align="right">
             <template #header>
-              <span>
-                成本均价
-                <el-tooltip content="移动加权平均法估算，仅供参考" placement="top">
-                  <span style="cursor:help;color:#999;font-size:12px;">ⓘ</span>
-                </el-tooltip>
-              </span>
+              <span>均价<el-tooltip content="移动加权平均" placement="top"><span style="cursor:help;color:#999;font-size:12px;">ⓘ</span></el-tooltip></span>
             </template>
             <template #default="{ row }">¥{{ (row.costPrice || 0).toFixed(2) }}</template>
           </el-table-column>
-          <el-table-column label="库存金额" sortable width="130" align="right">
+          <el-table-column label="金额" sortable width="110" align="right">
             <template #default="{ row }">¥{{ ((row.costPrice || 0) * (row.quantity || 0)).toFixed(2) }}</template>
           </el-table-column>
-          <el-table-column prop="updateTime" label="最后变动" width="170">
+          <el-table-column prop="updateTime" label="变动" width="150">
             <template #default="{ row }">{{ row.updateTime ? row.updateTime.substring(0, 16) : '-' }}</template>
           </el-table-column>
         </el-table>
@@ -180,11 +177,21 @@ onMounted(() => { fetchWarehouseTree(); fetchData() })
   font-weight: 600;
   color: #303133;
 }
+.warehouse-path {
+  font-size: 12px;
+  font-weight: 400;
+  color: #a8abb2;
+  margin: 0 12px;
+  max-width: 400px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .warehouse-stats {
   font-size: 13px;
   font-weight: 400;
   color: #909399;
-  margin-left: 12px;
+  margin-left: auto;
 }
 .warehouse-footer {
   background: #fafafa;

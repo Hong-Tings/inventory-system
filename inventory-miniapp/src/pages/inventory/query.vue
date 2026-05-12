@@ -30,7 +30,31 @@ const invByWh = computed(() => {
   return m
 })
 
-// 给树注入库存数据 + 展平
+// 构建仓库路径映射：warehouseId → 完整路径字符串
+const whPathMap = computed(() => {
+  const m = new Map()
+  function walk(nodes, parentPath) {
+    for (const n of nodes) {
+      const path = parentPath ? parentPath + ' > ' + n.name : n.name
+      m.set(n.id, path)
+      if (n.children?.length) walk(n.children, path)
+    }
+  }
+  walk(warehouseTree.value, '')
+  return m
+})
+
+// 搜索模式：按仓库分组的库存列表
+const searchResults = computed(() => {
+  if (!keyword.value || !allList.value.length) return []
+  const groups = new Map()
+  for (const inv of allList.value) {
+    const wid = inv.warehouseId
+    if (!groups.has(wid)) groups.set(wid, { warehouseId: wid, warehouseName: inv.warehouseName || '', path: whPathMap.value.get(wid) || '', items: [] })
+    groups.get(wid).items.push(inv)
+  }
+  return [...groups.values()]
+})
 function buildNode(n, depth) {
   const invs = invByWh.value.get(n.id) || []
   const qty = invs.reduce((s, i) => s + (i.quantity || 0), 0)
@@ -54,6 +78,17 @@ const displayTree = computed(() => {
   return pruneTree(tree, warehouseId.value) || tree
 })
 
+// 搜索时过滤掉无匹配库存的仓库节点
+function filterEmptyNodes(nodes) {
+  if (!keyword.value) return nodes
+  return nodes.filter(n => {
+    const hasInv = invByWh.value.has(n.id) && invByWh.value.get(n.id).length > 0
+    const childMatch = n.children?.length ? filterEmptyNodes(n.children) : []
+    if (childMatch.length) n.children = childMatch
+    return hasInv || childMatch.length
+  })
+}
+
 const flatList = computed(() => {
   function flatten(nodes) {
     const r = []
@@ -63,7 +98,7 @@ const flatList = computed(() => {
     }
     return r
   }
-  return flatten(displayTree.value.map(n => buildNode(n, 0)))
+  return flatten(filterEmptyNodes(displayTree.value.map(n => buildNode(n, 0))))
 })
 
 async function fetchData() {
@@ -153,16 +188,41 @@ onPullDownRefresh(() => { fetchData(); uni.stopPullDownRefresh() })
     </view>
 
     <view v-if="loading" class="loading">加载中...</view>
+    <view v-else-if="keyword" class="result-wrap">
+      <!-- 搜索模式：按仓库分组显示 -->
+      <view v-for="group in searchResults" :key="group.warehouseId" class="wh-group">
+        <view class="wh-group-header">
+          <text class="wh-group-path">{{ group.path }}</text>
+          <text class="wh-group-count">{{ group.items.length }}项</text>
+        </view>
+        <view v-for="inv in group.items" :key="inv.id || inv.productId" class="inv-card">
+          <view class="inv-row">
+            <view class="inv-info">
+              <text class="inv-name">{{ inv.productName }}</text>
+              <text class="inv-code">{{ inv.productCode }}</text>
+            </view>
+            <text class="inv-qty" :class="{ low: (inv.quantity || 0) <= 5 }">{{ inv.quantity }}</text>
+          </view>
+          <view class="inv-footer">
+            <text>批次: {{ inv.batchNo || '-' }}</text>
+            <text>仓码: {{ inv.warehouseCode || '-' }}</text>
+            <text>均价 ¥{{ (inv.costPrice || 0).toFixed(2) }}</text>
+            <text>¥{{ ((inv.costPrice || 0) * (inv.quantity || 0)).toFixed(2) }}</text>
+          </view>
+        </view>
+      </view>
+      <view v-if="!searchResults.length && !loading" class="empty">未找到匹配商品</view>
+      <view v-if="searchResults.length" class="grand-total">总计 {{ grandTotal.qty }} 件 · ¥{{ grandTotal.amt.toFixed(2) }}</view>
+    </view>
     <view v-else class="tree-wrap">
+      <!-- 树形模式 -->
       <view v-for="node in flatList" :key="node.id" class="tree-row" :style="{ paddingLeft: (node._depth * 20 + 12) + 'px' }">
-        <!-- 仓库节点 -->
         <view v-if="!node._invs?.length || node.children?.length" class="node-row" @click="node.children?.length && toggle(node.id)">
           <text class="toggle-icon">{{ node.children?.length ? (expanded.has(node.id) ? '▼' : '▶') : '  ' }}</text>
           <text class="node-name" :class="'lv' + node.level">{{ node.name }}</text>
           <text class="level-tag">{{ node.level }}级</text>
           <text v-if="node._pc" class="node-stats">{{ node._pc }}种 · {{ node._qty }}件</text>
         </view>
-        <!-- 叶子节点：展开显示库存明细 -->
         <view v-if="!node.children?.length && node._invs?.length">
           <view class="node-row leaf-header" @click="toggle(node.id)">
             <text class="toggle-icon">{{ expanded.has(node.id) ? '▼' : '▶' }}</text>
@@ -226,6 +286,11 @@ onPullDownRefresh(() => { fetchData(); uni.stopPullDownRefresh() })
 .inv-qty.low { color: #c62828; }
 .inv-footer { display: flex; gap: 12px; margin-top: 6px; font-size: 11px; color: #aaa; }
 .grand-total { text-align: right; padding: 14px 16px; font-size: 14px; font-weight: 600; color: #303133; }
+.result-wrap { padding-bottom: 4px; }
+.wh-group { margin-bottom: 12px; }
+.wh-group-header { display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; background: #f0f4f0; border-radius: 6px; margin-bottom: 6px; }
+.wh-group-path { font-size: 12px; color: #2e7d32; font-weight: 500; flex: 1; }
+.wh-group-count { font-size: 11px; color: #999; white-space: nowrap; margin-left: 8px; }
 .picker-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 999; display: flex; align-items: flex-end; }
 .picker-modal { background: #fff; border-radius: 16px 16px 0 0; width: 100%; max-height: 70vh; display: flex; flex-direction: column; }
 .picker-header { display: flex; align-items: center; justify-content: space-between; padding: 16px; border-bottom: 1px solid #eee; }

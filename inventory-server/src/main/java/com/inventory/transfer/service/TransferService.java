@@ -210,6 +210,15 @@ public class TransferService {
         InventoryTransfer transfer = transferMapper.selectById(id);
         if (transfer == null) throw new BusinessException("调拨单不存在");
         if (transfer.getStatus() != OrderStatus.DRAFT) throw new BusinessException("当前状态不可提交");
+        transfer.setStatus(OrderStatus.PENDING);
+        transferMapper.updateById(transfer);
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    public synchronized void approve(Long id) {
+        InventoryTransfer transfer = transferMapper.selectById(id);
+        if (transfer == null) throw new BusinessException("调拨单不存在");
+        if (transfer.getStatus() != OrderStatus.PENDING) throw new BusinessException("当前状态不可审核");
 
         List<InventoryTransferItem> items = transferItemMapper.selectList(
                 new LambdaQueryWrapper<InventoryTransferItem>().eq(InventoryTransferItem::getTransferId, id));
@@ -331,6 +340,16 @@ public class TransferService {
     }
 
     @Transactional(rollbackFor = Exception.class)
+    public void reject(Long id, String reason) {
+        InventoryTransfer transfer = transferMapper.selectById(id);
+        if (transfer == null) throw new BusinessException("调拨单不存在");
+        if (transfer.getStatus() != OrderStatus.PENDING) throw new BusinessException("当前状态不可驳回");
+        transfer.setStatus(OrderStatus.DRAFT);
+        transfer.setRemark((transfer.getRemark() != null ? transfer.getRemark() + " | " : "") + "驳回原因: " + (reason != null ? reason : ""));
+        transferMapper.updateById(transfer);
+    }
+
+    @Transactional(rollbackFor = Exception.class)
     public void delete(Long id) {
         InventoryTransfer transfer = transferMapper.selectById(id);
         if (transfer == null) throw new BusinessException("调拨单不存在");
@@ -372,6 +391,12 @@ public class TransferService {
         InventoryTransfer transfer = transferMapper.selectById(id);
         if (transfer == null) throw new BusinessException("调拨单不存在");
         if (transfer.getStatus() == OrderStatus.CANCELED) throw new BusinessException("调拨单已取消");
+
+        if (transfer.getStatus() == OrderStatus.PENDING) {
+            transfer.setStatus(OrderStatus.CANCELED);
+            transferMapper.updateById(transfer);
+            return;
+        }
 
         // 如果已确认，需要回滚库存
         if (transfer.getStatus() == OrderStatus.CONFIRMED) {

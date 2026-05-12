@@ -168,6 +168,7 @@ onPullDownRefresh(() => { fetchData(); uni.stopPullDownRefresh() })
             <text class="toggle-icon">{{ expanded.has(node.id) ? '▼' : '▶' }}</text>
             <text class="node-name lv4">{{ node.name }}</text>
             <text class="level-tag">{{ node.level }}级</text>
+            <text v-if="node.code" style="font-size:11px;color:#999;">{{ node.code }}</text>
             <text class="node-stats">{{ node._pc }}种 · {{ node._qty }}件</text>
           </view>
           <view v-if="expanded.has(node.id)" class="invs-wrap">
@@ -181,7 +182,7 @@ onPullDownRefresh(() => { fetchData(); uni.stopPullDownRefresh() })
               </view>
               <view class="inv-footer">
                 <text>批次: {{ inv.batchNo || '-' }}</text>
-                <text>{{ inv.warehouseCode || '' }}</text>
+                <text>仓码: {{ inv.warehouseCode || '-' }}</text>
                 <text>均价 ¥{{ (inv.costPrice || 0).toFixed(2) }}</text>
                 <text>¥{{ ((inv.costPrice || 0) * (inv.quantity || 0)).toFixed(2) }}</text>
               </view>

@@ -63,7 +63,7 @@ function openCreate(parent?: any) {
       return
     }
   } else {
-    form.level = 1
+    form.level = 4
     form.parentId = undefined
   }
   parentCandidates.value = []
@@ -118,7 +118,7 @@ onMounted(fetchTree)
   <div>
     <div class="page-header"><h2>仓库管理</h2>
       <div>
-        <el-button type="primary" @click="openCreate()">+ 新增1级仓库</el-button>
+        <el-button type="primary" @click="openCreate()">+ 新增仓库</el-button>
         <el-button @click="handleExport">导出Excel</el-button>
       </div>
     </div>

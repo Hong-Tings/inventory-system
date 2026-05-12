@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, reactive, onMounted, computed } from 'vue'
+import { ref, reactive, watch, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import request, { downloadFile } from '../../api/request'
 import type { Inventory } from '../../types/api'
@@ -33,12 +33,8 @@ const expanded = reactive(new Set<number>())
 function toggle(id: number) { expanded.has(id) ? expanded.delete(id) : expanded.add(id) }
 function isExpanded(id: number) { return expanded.has(id) }
 
-function onWarehouseChange(val: number | undefined) {
-  query.value.warehouseId = val
-  handleSearch()
-}
 function handleSearch() { fetchData() }
-function handleReset() { query.value = { productName: '', warehouseId: undefined }; fetchData() }
+function handleReset() { query.value = { productName: '', warehouseId: undefined }; fetchData() expanded.clear() }
 function handleExport() { downloadFile('/inventory/export', '库存查询.xlsx') }
 
 // 从 inventory 数据构建商品名→库存的映射
@@ -105,6 +101,7 @@ const grandTotal = computed(() => {
   return { qty, amt }
 })
 
+watch(() => query.value.warehouseId, () => { fetchData() })
 onMounted(() => { fetchWarehouseTree(); fetchData() })
 </script>
 
@@ -127,7 +124,6 @@ onMounted(() => { fetchWarehouseTree(); fetchData() })
         placeholder="全部仓库"
         clearable
         style="width:200px"
-        @change="onWarehouseChange"
       />
       <el-button type="primary" @click="handleSearch">查询</el-button>
       <el-button @click="handleReset">重置</el-button>

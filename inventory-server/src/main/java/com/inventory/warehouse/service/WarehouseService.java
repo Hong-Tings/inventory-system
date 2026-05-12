@@ -52,6 +52,7 @@ public class WarehouseService {
     public List<Warehouse> tree() {
         List<Warehouse> all = warehouseMapper.selectList(new LambdaQueryWrapper<Warehouse>()
                 .eq(Warehouse::getStatus, 1).orderByAsc(Warehouse::getId));
+        for (Warehouse w : all) enrichStats(w);
         Map<Long, Warehouse> map = all.stream().collect(Collectors.toMap(Warehouse::getId, w -> w));
         List<Warehouse> roots = new java.util.ArrayList<>();
         for (Warehouse w : all) {

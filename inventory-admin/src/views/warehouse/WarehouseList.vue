@@ -1,179 +1,151 @@
 <script setup lang="ts">
-import { ref, onMounted, reactive, computed } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import request, { downloadFile } from '../../api/request'
-import type { Warehouse, PageParams } from '../../types/api'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useUserStore } from '../../store/user'
 
 const router = useRouter()
 const userStore = useUserStore()
 const loading = ref(false)
-const list = ref<Warehouse[]>([])
-const total = ref(0)
-const selectedIds = ref<number[]>([])
+const treeData = ref<any[]>([])
 const dialogVisible = ref(false)
-const level1List = ref<any[]>([])
-const level2List = ref<any[]>([])
-const level3List = ref<any[]>([])
-const level4List = ref<any[]>([])
 const parentCandidates = ref<any[]>([])
 
-const query = reactive<PageParams & { name?: string; status?: number; contact?: string; phone?: string; address?: string; level1Id?: number; level2Id?: number; level3Id?: number; level4Id?: number; keyword?: string }>({ page: 1, size: 10, name: '', status: undefined, contact: '', phone: '', address: '', level1Id: undefined, level2Id: undefined, level3Id: undefined, level4Id: undefined, keyword: '' })
+const query = ref({ keyword: '', name: '', status: undefined as number | undefined })
 const form = reactive<any>({ name: '', code: '', contact: '', phone: '', address: '', status: 1, remark: '', level: 4, parentId: undefined })
 
-async function fetchData() {
+async function fetchTree() {
   loading.value = true
   try {
-    const res = await request.get('/warehouse/page', { params: query })
-    list.value = res.data.data.records
-    total.value = res.data.data.total
+    const params: Record<string, any> = {}
+    if (query.value.keyword) params.keyword = query.value.keyword
+    if (query.value.name) params.name = query.value.name
+    if (query.value.status !== undefined) params.status = query.value.status
+
+    if (query.value.keyword) {
+      const res = await request.get('/warehouse/search', { params: { keyword: query.value.keyword } })
+      treeData.value = res.data.data || []
+    } else {
+      const res = await request.get('/warehouse/tree')
+      treeData.value = res.data.data || []
+    }
   } finally { loading.value = false }
 }
-function handleSearch() { query.page = 1; fetchData() }
-function handleReset() { query.name = ''; query.status = undefined; query.contact = ''; query.phone = ''; query.address = ''; query.level1Id = undefined; query.level2Id = undefined; query.level3Id = undefined; query.level4Id = undefined; query.keyword = ''; level2List.value = []; level3List.value = []; level4List.value = []; handleSearch() }
-function openCreate() { Object.assign(form, { id: undefined, name: '', code: '', contact: '', phone: '', address: '', status: 1, remark: '', level: 4, parentId: undefined }); dialogVisible.value = true }
-function openEdit(row: any) { Object.assign(form, { ...row }); dialogVisible.value = true }
+function handleSearch() { fetchTree() }
+function handleReset() { query.value = { keyword: '', name: '', status: undefined }; fetchTree() }
+
+function openCreate(parent?: any) {
+  Object.assign(form, { id: undefined, name: '', code: '', contact: '', phone: '', address: '', status: 1, remark: '' })
+  if (parent) {
+    const childLevel = (parent.level || 1) + 1
+    if (childLevel <= 4) {
+      form.level = childLevel
+      form.parentId = parent.id
+    } else {
+      ElMessage.warning('已达到最大层级')
+      return
+    }
+  } else {
+    form.level = 1
+    form.parentId = undefined
+  }
+  parentCandidates.value = []
+  dialogVisible.value = true
+}
+function openEdit(row: any) {
+  Object.assign(form, { ...row })
+  if (form.level > 1) loadParentCandidates(form.level)
+  dialogVisible.value = true
+}
+async function loadParentCandidates(level: number) {
+  if (level > 1) {
+    const levelMap: Record<number, number> = { 2: 1, 3: 2, 4: 3 }
+    const res = await request.get('/warehouse/page', { params: { page: 1, size: 999, level: levelMap[level as keyof typeof levelMap] } })
+    parentCandidates.value = res.data.data.records
+  }
+}
 async function handleSave() {
   if (!form.name || !form.address || !form.contact || !form.phone) { ElMessage.warning('请填写完整信息'); return }
   try {
     if (form.id) await request.put(`/warehouse/${form.id}`, form)
     else await request.post('/warehouse', form)
-    ElMessage.success('保存成功'); dialogVisible.value = false; fetchData()
+    ElMessage.success('保存成功'); dialogVisible.value = false; fetchTree()
   } catch { /* handled */ }
 }
 async function handleToggleStatus(row: any) {
   const s = row.status === 1 ? 0 : 1
   await request.put(`/warehouse/${row.id}`, { ...row, status: s })
-  ElMessage.success(s === 1 ? '已启用' : '已停用'); fetchData()
+  ElMessage.success(s === 1 ? '已启用' : '已停用'); fetchTree()
 }
 async function handleDelete(row: any) {
   try {
-    await ElMessageBox.confirm(`确定作废仓库「${row.name}」？`, '确认作废', { type: 'warning' })
+    await ElMessageBox.confirm(`确定作废仓库「${row.name}」及其所有子仓库？`, '确认作废', { type: 'warning' })
     await request.delete(`/warehouse/${row.id}`)
-    ElMessage.success('已作废'); fetchData()
+    ElMessage.success('已作废'); fetchTree()
   } catch (err: any) {
     if (err?.response?.data?.message) ElMessage.error(err.response.data.message)
   }
 }
-async function handleBatchToggle(status: number) {
-  if (!selectedIds.value.length) { ElMessage.warning('请先选择仓库'); return }
-  for (const id of selectedIds.value) {
-    await request.put(`/warehouse/${id}`, { id, status })
-  }
-  ElMessage.success(`已${status === 1 ? '启用' : '停用'} ${selectedIds.value.length} 个仓库`)
-  selectedIds.value = []; fetchData()
-}
 function handleExport() { downloadFile('/warehouse/export', '仓库.xlsx') }
-async function onLevel1Change(val: number | undefined) {
-  query.level2Id = undefined; query.level3Id = undefined; query.level4Id = undefined;
-  level2List.value = []; level3List.value = []; level4List.value = [];
-  if (val) { const res = await request.get('/warehouse/children/' + val); level2List.value = res.data.data }
-  handleSearch()
-}
-async function onLevel2Change(val: number | undefined) {
-  query.level3Id = undefined; query.level4Id = undefined;
-  level3List.value = []; level4List.value = [];
-  if (val) { const res = await request.get('/warehouse/children/' + val); level3List.value = res.data.data }
-  handleSearch()
-}
-async function onLevel3Change(val: number | undefined) {
-  query.level4Id = undefined; level4List.value = [];
-  if (val) { const res = await request.get('/warehouse/children/' + val); level4List.value = res.data.data }
-  handleSearch()
-}
-async function onLevelChange(level: number) {
+
+function onLevelChange(level: number) {
   form.parentId = undefined
-  if (level > 1) {
-    const levelMap: Record<number, number> = { 2: 1, 3: 2, 4: 3 }
-    const res = await request.get('/warehouse/page', { params: { page: 1, size: 999, level: levelMap[level] } })
-    parentCandidates.value = res.data.data.records
-  }
+  loadParentCandidates(level)
 }
-onMounted(async () => {
-  const res = await request.get('/warehouse/page', { params: { page: 1, size: 999, level: 1 } })
-  level1List.value = res.data.data.records
-  fetchData()
-})
+
+onMounted(fetchTree)
 </script>
 
 <template>
   <div>
     <div class="page-header"><h2>仓库管理</h2>
       <div>
-        <el-button type="primary" @click="openCreate">+ 新增仓库</el-button>
+        <el-button type="primary" @click="openCreate()">+ 新增1级仓库</el-button>
         <el-button @click="handleExport">导出Excel</el-button>
       </div>
     </div>
 
     <div class="search-bar">
-      <el-select v-model="query.level1Id" placeholder="1级" clearable style="width:140px" @change="onLevel1Change">
-        <el-option v-for="w in level1List" :key="w.id" :label="w.name" :value="w.id" />
-      </el-select>
-      <el-select v-model="query.level2Id" placeholder="2级" clearable style="width:140px" :disabled="!query.level1Id" @change="onLevel2Change">
-        <el-option v-for="w in level2List" :key="w.id" :label="w.name" :value="w.id" />
-      </el-select>
-      <el-select v-model="query.level3Id" placeholder="3级" clearable style="width:140px" :disabled="!query.level2Id" @change="onLevel3Change">
-        <el-option v-for="w in level3List" :key="w.id" :label="w.name" :value="w.id" />
-      </el-select>
-      <el-select v-model="query.level4Id" placeholder="4级" clearable style="width:140px" :disabled="!query.level3Id" @change="handleSearch">
-        <el-option v-for="w in level4List" :key="w.id" :label="w.name" :value="w.id" />
-      </el-select>
-      <el-input v-model="query.name" placeholder="仓库名称" clearable style="width:200px" @keyup.enter="handleSearch" @clear="handleSearch" />
-      <el-input v-model="query.contact" placeholder="联系人" clearable style="width:140px" @keyup.enter="handleSearch" @clear="handleSearch" />
-      <el-input v-model="query.phone" placeholder="联系电话" clearable style="width:160px" @keyup.enter="handleSearch" @clear="handleSearch" />
-      <el-input v-model="query.address" placeholder="仓库地址" clearable style="width:200px" @keyup.enter="handleSearch" @clear="handleSearch" />
+      <el-input v-model="query.keyword" placeholder="搜索仓库名称/编码" clearable style="width:220px" @keyup.enter="handleSearch" @clear="handleSearch" />
+      <el-input v-model="query.name" placeholder="仓库名称" clearable style="width:160px" @keyup.enter="handleSearch" @clear="handleSearch" />
       <el-select v-model="query.status" placeholder="状态" clearable style="width:120px" @change="handleSearch">
         <el-option label="启用" :value="1" /><el-option label="停用" :value="0" />
       </el-select>
-      <el-input v-model="query.keyword" placeholder="搜索仓库名称/编码" clearable style="width:180px" @keyup.enter="handleSearch" @clear="handleSearch" />
       <el-button type="primary" @click="handleSearch">查询</el-button>
       <el-button @click="handleReset">重置</el-button>
     </div>
 
-    <div style="margin-bottom:10px;" v-if="selectedIds.length">
-      <span style="font-size:13px;color:#666;margin-right:8px;">已选 {{ selectedIds.length }} 项</span>
-      <el-button size="small" type="success" @click="handleBatchToggle(1)">批量启用</el-button>
-      <el-button size="small" type="warning" @click="handleBatchToggle(0)">批量停用</el-button>
-    </div>
-
     <div class="table-container">
-      <el-table :data="list" v-loading="loading" stripe border @selection-change="(rows: any[]) => selectedIds = rows.map(r => r.id)">
-        <el-table-column type="selection" width="40" />
-        <el-table-column prop="code" label="编码" width="100" />
-        <el-table-column prop="level" label="层级" width="80">
-          <template #default="{ row }">{{ row.level ? row.level + '级' : '-' }}</template>
+      <el-table :data="treeData" v-loading="loading" stripe border row-key="id" :tree-props="{ children: 'children' }" default-expand-all>
+        <el-table-column prop="name" label="仓库名称" min-width="200">
+          <template #default="{ row }">
+            <span :style="{ fontWeight: row.level === 1 ? 'bold' : 'normal', color: row.status === 0 ? '#999' : '' }">{{ row.name }}</span>
+            <el-tag size="small" style="margin-left:6px;">{{ row.level }}级</el-tag>
+          </template>
         </el-table-column>
-        <el-table-column prop="name" label="仓库名称" width="140" />
-        <el-table-column prop="parentName" label="上级" width="120" />
-        <el-table-column prop="address" label="地址" width="120" show-overflow-tooltip />
-        <el-table-column prop="contact" label="负责人" width="90" />
-        <el-table-column prop="phone" label="联系电话" width="130" />
-        <el-table-column label="商品总数" width="100">
+        <el-table-column prop="code" label="编码" width="140" />
+        <el-table-column prop="address" label="地址" width="160" show-overflow-tooltip />
+        <el-table-column prop="contact" label="负责人" width="100" />
+        <el-table-column prop="phone" label="联系电话" width="140" />
+        <el-table-column label="商品总数" width="100" sortable>
           <template #default="{ row }"><span style="font-weight:600;">{{ row.productCount ?? '-' }}</span></template>
         </el-table-column>
-        <el-table-column label="库存金额" width="120">
+        <el-table-column label="库存金额" width="120" sortable>
           <template #default="{ row }">¥{{ row.totalAmount?.toFixed(2) ?? '0.00' }}</template>
         </el-table-column>
-        <el-table-column prop="status" label="状态" width="70">
+        <el-table-column prop="status" label="状态" width="80">
           <template #default="{ row }"><el-tag :type="row.status === 1 ? 'success' : 'info'" size="small">{{ row.status === 1 ? '启用' : '停用' }}</el-tag></template>
         </el-table-column>
-        <el-table-column prop="remark" label="备注" width="120" show-overflow-tooltip />
-        <el-table-column prop="createTime" label="新增时间" width="170" sortable>
-          <template #default="{ row }">{{ row.createTime ? row.createTime.substring(0, 16) : '-' }}</template>
-        </el-table-column>
-        <el-table-column prop="updateTime" label="更新时间" width="170" sortable>
-          <template #default="{ row }">{{ row.updateTime ? row.updateTime.substring(0, 16) : '-' }}</template>
-        </el-table-column>
-        <el-table-column label="操作" width="220" fixed="right">
+        <el-table-column label="操作" width="280" fixed="right">
           <template #default="{ row }">
             <el-button size="small" @click="openEdit(row)">编辑</el-button>
+            <el-button v-if="row.level < 4" size="small" type="primary" @click="openCreate(row)">+ 新增子级</el-button>
             <el-button size="small" :type="row.status === 1 ? 'warning' : 'success'" @click="handleToggleStatus(row)">{{ row.status === 1 ? '停用' : '启用' }}</el-button>
             <el-button v-if="userStore.isAdmin" size="small" type="danger" @click="handleDelete(row)">作废</el-button>
           </template>
         </el-table-column>
       </el-table>
-      <el-pagination v-model:page-size="query.size" :total="total" layout="total, sizes, prev, pager, next" style="margin-top:16px;justify-content:flex-end" @current-change="query.page = $event; fetchData()" @size-change="query.page = 1; fetchData()" />
     </div>
 
     <el-dialog v-model="dialogVisible" :title="form.id ? '编辑仓库' : '新增仓库'" width="520px">

@@ -107,16 +107,16 @@ onMounted(async () => {
     </div>
 
     <div class="search-bar">
-      <el-select v-model="query.level1Id" placeholder="1级大区" clearable style="width:140px" @change="onLevel1Change">
+      <el-select v-model="query.level1Id" placeholder="1级" clearable style="width:140px" @change="onLevel1Change">
         <el-option v-for="w in level1List" :key="w.id" :label="w.name" :value="w.id" />
       </el-select>
-      <el-select v-model="query.level2Id" placeholder="2级区域" clearable style="width:140px" :disabled="!query.level1Id" @change="onLevel2Change">
+      <el-select v-model="query.level2Id" placeholder="2级" clearable style="width:140px" :disabled="!query.level1Id" @change="onLevel2Change">
         <el-option v-for="w in level2List" :key="w.id" :label="w.name" :value="w.id" />
       </el-select>
-      <el-select v-model="query.level3Id" placeholder="3级城市" clearable style="width:140px" :disabled="!query.level2Id" @change="onLevel3Change">
+      <el-select v-model="query.level3Id" placeholder="3级" clearable style="width:140px" :disabled="!query.level2Id" @change="onLevel3Change">
         <el-option v-for="w in level3List" :key="w.id" :label="w.name" :value="w.id" />
       </el-select>
-      <el-select v-model="query.level4Id" placeholder="4级仓库" clearable style="width:140px" :disabled="!query.level3Id" @change="handleSearch">
+      <el-select v-model="query.level4Id" placeholder="4级" clearable style="width:140px" :disabled="!query.level3Id" @change="handleSearch">
         <el-option v-for="w in level4List" :key="w.id" :label="w.name" :value="w.id" />
       </el-select>
       <el-input v-model="query.name" placeholder="仓库名称" clearable style="width:200px" @keyup.enter="handleSearch" @clear="handleSearch" />
@@ -142,7 +142,7 @@ onMounted(async () => {
         <el-table-column type="selection" width="40" />
         <el-table-column prop="code" label="编码" width="100" />
         <el-table-column prop="level" label="层级" width="80">
-          <template #default="{ row }">{{ ['','大区','区域','城市','仓库'][row.level] || '-' }}</template>
+          <template #default="{ row }">{{ row.level ? row.level + '级' : '-' }}</template>
         </el-table-column>
         <el-table-column prop="name" label="仓库名称" width="140" />
         <el-table-column prop="parentName" label="上级" width="120" />
@@ -183,10 +183,10 @@ onMounted(async () => {
         <el-form-item label="仓库地址" required><el-input v-model="form.address" placeholder="XX市XX区XX路XX号" /></el-form-item>
         <el-form-item label="层级" required>
           <el-select v-model="form.level" placeholder="选择层级" @change="onLevelChange">
-            <el-option label="1级-大区" :value="1" />
-            <el-option label="2级-区域" :value="2" />
-            <el-option label="3级-城市" :value="3" />
-            <el-option label="4级-仓库" :value="4" />
+            <el-option label="1级" :value="1" />
+            <el-option label="2级" :value="2" />
+            <el-option label="3级" :value="3" />
+            <el-option label="4级" :value="4" />
           </el-select>
         </el-form-item>
         <el-form-item label="上级仓库" v-if="form.level && form.level > 1">

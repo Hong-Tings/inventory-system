@@ -60,8 +60,8 @@ async function handleSubmit() {
       </view>
       <view class="form-item">
         <text class="label">层级</text>
-        <picker @change="e => form.level = [1,2,3,4][e.detail.value]" :range="['1级-大区','2级-区域','3级-城市','4级-仓库']">
-          <view class="picker">{{ ['','1级-大区','2级-区域','3级-城市','4级-仓库'][form.level] || '请选择层级' }}</view>
+        <picker @change="e => form.level = [1,2,3,4][e.detail.value]" :range="['1级','2级','3级','4级']">
+          <view class="picker">{{ form.level ? form.level + '级' : '请选择层级' }}</view>
         </picker>
       </view>
       <view class="form-item">

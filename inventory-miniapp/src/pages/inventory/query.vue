@@ -40,6 +40,20 @@ function buildNode(n, depth) {
   return node
 }
 
+// 选了仓库时只显示该节点子树
+function pruneTree(nodes, targetId) {
+  for (const n of nodes) {
+    if (n.id === targetId) return [n]
+    if (n.children?.length) { const f = pruneTree(n.children, targetId); if (f) return f }
+  }
+  return null
+}
+const displayTree = computed(() => {
+  const tree = warehouseTree.value
+  if (!warehouseId.value) return tree
+  return pruneTree(tree, warehouseId.value) || tree
+})
+
 const flatList = computed(() => {
   function flatten(nodes) {
     const r = []
@@ -49,7 +63,7 @@ const flatList = computed(() => {
     }
     return r
   }
-  return flatten(warehouseTree.value.map(n => buildNode(n, 0)))
+  return flatten(displayTree.value.map(n => buildNode(n, 0)))
 })
 
 async function fetchData() {

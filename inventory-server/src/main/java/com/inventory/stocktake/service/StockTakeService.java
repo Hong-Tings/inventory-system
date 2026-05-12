@@ -10,6 +10,7 @@ import com.inventory.inventory.entity.InventoryLog;
 import com.inventory.inventory.mapper.InventoryLogMapper;
 import com.inventory.inventory.mapper.InventoryMapper;
 import com.inventory.stocktake.entity.StockTake;
+import com.inventory.stocktake.entity.StockTakeDetailExportVO;
 import com.inventory.stocktake.entity.StockTakeItem;
 import com.inventory.stocktake.mapper.StockTakeItemMapper;
 import com.inventory.stocktake.mapper.StockTakeMapper;
@@ -25,6 +26,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Date;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -94,6 +96,49 @@ public class StockTakeService {
             result.setTotal(filtered.size());
         }
 
+        return result;
+    }
+
+    public List<StockTakeDetailExportVO> getExportDetailList(List<StockTake> stocktakes) {
+        List<StockTakeDetailExportVO> result = new ArrayList<>();
+        for (StockTake s : stocktakes) {
+            List<StockTakeItem> items = stockTakeItemMapper.selectList(
+                    new LambdaQueryWrapper<StockTakeItem>().eq(StockTakeItem::getStockTakeId, s.getId()));
+            for (StockTakeItem item : items) {
+                if (item.getProductId() != null) {
+                    Product p = productMapper.selectById(item.getProductId());
+                    if (p != null) { item.setProductName(p.getName()); item.setProductCode(p.getCode()); }
+                }
+                StockTakeDetailExportVO vo = new StockTakeDetailExportVO();
+                vo.setOrderNo(s.getOrderNo());
+                vo.setWarehouseName(s.getWarehouseName());
+                vo.setTakeType(s.getTakeType() != null && s.getTakeType() == 0 ? "全盘" : "抽盘");
+                if (s.getStatus() != null) {
+                    switch (s.getStatus()) {
+                        case 0: vo.setStatus("盘点中"); break;
+                        case 1: vo.setStatus("已审核"); break;
+                        case 2: vo.setStatus("已调整"); break;
+                        default: vo.setStatus("未知"); break;
+                    }
+                }
+                vo.setProductName(item.getProductName());
+                vo.setProductCode(item.getProductCode());
+                vo.setBatchNo(item.getBatchNo());
+                vo.setBookQty(item.getBookQty());
+                vo.setActualQty(item.getActualQty());
+                vo.setDiffQty(item.getDiffQty());
+                vo.setDiffReason(item.getDiffReason());
+                result.add(vo);
+            }
+            if (items.isEmpty()) {
+                StockTakeDetailExportVO vo = new StockTakeDetailExportVO();
+                vo.setOrderNo(s.getOrderNo());
+                vo.setWarehouseName(s.getWarehouseName());
+                vo.setTakeType(s.getTakeType() != null && s.getTakeType() == 0 ? "全盘" : "抽盘");
+                vo.setStatus(s.getStatus() != null ? (s.getStatus() == 0 ? "盘点中" : s.getStatus() == 1 ? "已审核" : "已调整") : "未知");
+                result.add(vo);
+            }
+        }
         return result;
     }
 

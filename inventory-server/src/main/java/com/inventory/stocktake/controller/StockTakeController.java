@@ -8,6 +8,7 @@ import com.inventory.common.result.R;
 import com.inventory.common.util.ExcelUtil;
 import com.inventory.stocktake.entity.StockTake;
 import com.inventory.stocktake.entity.StockTakeItem;
+import com.inventory.stocktake.entity.StockTakeDetailExportVO;
 import com.inventory.stocktake.entity.StockTakeExportVO;
 import com.inventory.stocktake.service.StockTakeService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -101,27 +102,8 @@ public class StockTakeController {
             List<Long> idList = Arrays.stream(ids.split(",")).map(Long::parseLong).collect(Collectors.toList());
             list = list.stream().filter(s -> idList.contains(s.getId())).collect(Collectors.toList());
         }
-        List<StockTakeExportVO> voList = list.stream().map(s -> {
-            StockTakeExportVO vo = new StockTakeExportVO();
-            vo.setOrderNo(s.getOrderNo());
-            vo.setWarehouseName(s.getWarehouseName());
-            vo.setTakeType(s.getTakeType() != null && s.getTakeType() == 0 ? "全盘" : "抽盘");
-            vo.setTotalItems(s.getTotalItems());
-            vo.setDiffItems(s.getDiffItems());
-            if (s.getStatus() != null) {
-                switch (s.getStatus()) {
-                    case 0: vo.setStatus("盘点中"); break;
-                    case 1: vo.setStatus("已审核"); break;
-                    case 2: vo.setStatus("已调整"); break;
-                    default: vo.setStatus("未知"); break;
-                }
-            }
-            if (s.getOrderDate() != null) vo.setOrderDate(s.getOrderDate());
-            if (s.getCreateTime() != null) vo.setCreateTime(s.getCreateTime());
-            if (s.getUpdateTime() != null) vo.setUpdateTime(s.getUpdateTime());
-            return vo;
-        }).collect(Collectors.toList());
-        ExcelUtil.export(response, voList, "盘点单列表", StockTakeExportVO.class);
+        List<StockTakeDetailExportVO> voList = stockTakeService.getExportDetailList(list);
+        ExcelUtil.export(response, voList, "盘点明细", StockTakeDetailExportVO.class);
     }
 
     @Operation(summary = "盘点调整")

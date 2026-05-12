@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { ref, onMounted, reactive, computed } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import request, { downloadFile } from '../../api/request'
-import type { Inventory, PageParams } from '../../types/api'
+import type { Inventory } from '../../types/api'
 
 const router = useRouter()
 
@@ -10,14 +10,15 @@ const loading = ref(false)
 const allList = ref<Inventory[]>([])
 const warehouseTree = ref<any[]>([])
 
-const query = reactive<PageParams & { productName?: string; warehouseId?: number }>({
-  page: 1, size: 999, productName: '', warehouseId: undefined,
-})
+const query = ref({ productName: '', warehouseId: undefined as number | undefined })
 
 async function fetchData() {
   loading.value = true
   try {
-    const res = await request.get('/inventory/page', { params: query })
+    const params: Record<string, any> = { page: 1, size: 999 }
+    if (query.value.productName) params.productName = query.value.productName
+    if (query.value.warehouseId !== undefined) params.warehouseId = query.value.warehouseId
+    const res = await request.get('/inventory/page', { params })
     allList.value = res.data.data.records || []
   } finally { loading.value = false }
 }
@@ -28,49 +29,45 @@ async function fetchWarehouseTree() {
 }
 
 function onWarehouseChange(val: number | undefined) {
-  query.warehouseId = val
+  query.value.warehouseId = val
   handleSearch()
 }
-function handleSearch() { query.page = 1; fetchData() }
-function handleReset() { query.productName = ''; query.warehouseId = undefined; handleSearch() }
+function handleSearch() { fetchData() }
+function handleReset() { query.value = { productName: '', warehouseId: undefined }; fetchData() }
 function handleExport() { downloadFile('/inventory/export', '库存查询.xlsx') }
 
-// 递归构建仓库层级路径映射（如 "华东仓储中心 > 浦东仓管区 > 浦东主仓"）
-function buildPathMap(nodes: any[], prefix = '', map: Record<number, string> = {}) {
-  for (const n of nodes) {
-    const path = prefix ? prefix + ' > ' + n.name : n.name
-    map[n.id] = path
-    if (n.children?.length) buildPathMap(n.children, path, map)
-  }
-  return map
-}
-
-// 按仓库分组
-const grouped = computed(() => {
-  const pathMap = buildPathMap(warehouseTree.value)
-  const map = new Map<number, { wId: number; wName: string; path: string; items: Inventory[] }>()
+// 从 inventory 数据构建商品名→库存的映射
+const invByWarehouse = computed(() => {
+  const map = new Map<number, Inventory[]>()
   for (const item of allList.value) {
     const wid = item.warehouseId
-    if (!map.has(wid)) {
-      map.set(wid, { wId: wid, wName: pathMap[wid]?.split(' > ').pop() || '未知仓库', path: pathMap[wid] || '', items: [] })
-    }
-    map.get(wid)!.items.push(item)
+    if (!map.has(wid)) map.set(wid, [])
+    map.get(wid)!.push(item)
   }
-  return Array.from(map.values())
+  return map
 })
 
-// 每个仓库的小计
-function warehouseSubtotal(items: Inventory[]) {
-  const qty = items.reduce((s, i) => s + (i.quantity || 0), 0)
-  const amount = items.reduce((s, i) => s + ((i.costPrice || 0) * (i.quantity || 0)), 0)
-  return { qty, amount }
+// 给仓库树注入库存数据
+function buildTreeWithStock(nodes: any[]): any[] {
+  return nodes.map(n => {
+    const invs = invByWarehouse.value.get(n.id) || []
+    const qty = invs.reduce((s, i: any) => s + (i.quantity || 0), 0)
+    const amt = invs.reduce((s, i: any) => s + ((i.costPrice || 0) * (i.quantity || 0)), 0)
+    const node = { ...n, _productCount: invs.length, _totalQty: qty, _totalAmt: amt }
+    if (n.children?.length) {
+      node.children = buildTreeWithStock(n.children)
+    }
+    return node
+  })
 }
 
-// 全部总计
+const treeWithStock = computed(() => buildTreeWithStock(warehouseTree.value))
+
+// 合计
 const grandTotal = computed(() => {
-  const qty = allList.value.reduce((s, i) => s + (i.quantity || 0), 0)
-  const amount = allList.value.reduce((s, i) => s + ((i.costPrice || 0) * (i.quantity || 0)), 0)
-  return { qty, amount }
+  const qty = allList.value.reduce((s: number, i: any) => s + (i.quantity || 0), 0)
+  const amt = allList.value.reduce((s: number, i: any) => s + ((i.costPrice || 0) * (i.quantity || 0)), 0)
+  return { qty, amt }
 })
 
 onMounted(() => { fetchWarehouseTree(); fetchData() })
@@ -86,7 +83,6 @@ onMounted(() => { fetchWarehouseTree(); fetchData() })
       </div>
     </div>
 
-    <!-- 搜索 -->
     <div class="search-bar">
       <el-input v-model="query.productName" placeholder="商品名称/编码" clearable style="width:200px" @keyup.enter="handleSearch" @clear="handleSearch" />
       <el-cascader
@@ -103,111 +99,114 @@ onMounted(() => { fetchWarehouseTree(); fetchData() })
     </div>
 
     <div v-loading="loading">
-      <!-- 按仓库分组展示 -->
-      <div v-if="grouped.length === 0 && !loading" style="text-align:center;padding:60px 0;color:#999;">
-        暂无库存数据
+      <div v-if="!treeWithStock.length && !loading" style="text-align:center;padding:60px 0;color:#999;">暂无库存数据</div>
+
+      <div v-for="root in treeWithStock" :key="root.id" class="tree-root">
+        <div class="tree-node tree-level-1" @click="root._expanded = !root._expanded">
+          <span class="toggle-icon">{{ root._expanded ? '▼' : '▶' }}</span>
+          <span class="node-name">{{ root.name }}</span>
+          <el-tag size="small" type="primary">{{ root.level }}级</el-tag>
+          <span class="node-stats" v-if="root._productCount">{{ root._productCount }} 种 · {{ root._totalQty }} 件 · ¥{{ root._totalAmt.toFixed(2) }}</span>
+        </div>
+        <div v-show="root._expanded" style="padding-left:24px;">
+          <template v-for="child in root.children" :key="child.id">
+            <div v-if="child.children?.length" class="tree-node tree-level-2" @click="child._expanded = !child._expanded">
+              <span class="toggle-icon">{{ child._expanded ? '▼' : '▶' }}</span>
+              <span class="node-name">{{ child.name }}</span>
+              <el-tag size="small" type="success">{{ child.level }}级</el-tag>
+              <span class="node-stats" v-if="child._productCount">{{ child._productCount }} 种 · {{ child._totalQty }} 件 · ¥{{ child._totalAmt.toFixed(2) }}</span>
+            </div>
+            <div v-show="child._expanded || !child.children?.length" style="padding-left:24px;">
+              <template v-if="child.children?.length">
+                <div v-for="sub in child.children" :key="sub.id">
+                  <div v-if="sub.children?.length" class="tree-node tree-level-3" @click="sub._expanded = !sub._expanded">
+                    <span class="toggle-icon">{{ sub._expanded ? '▼' : '▶' }}</span>
+                    <span class="node-name">{{ sub.name }}</span>
+                    <el-tag size="small" type="warning">{{ sub.level }}级</el-tag>
+                    <span class="node-stats" v-if="sub._productCount">{{ sub._productCount }} 种 · {{ sub._totalQty }} 件 · ¥{{ sub._totalAmt.toFixed(2) }}</span>
+                  </div>
+                  <div v-show="sub._expanded || !sub.children?.length" style="padding-left:24px;">
+                    <div v-for="leaf in sub.children" :key="leaf.id">
+                      <div class="tree-node tree-level-4">
+                        <span class="node-name">{{ leaf.name }}</span>
+                        <el-tag size="small" type="info">{{ leaf.level }}级</el-tag>
+                        <span class="node-stats" v-if="leaf._productCount">{{ leaf._productCount }} 种 · {{ leaf._totalQty }} 件 · ¥{{ leaf._totalAmt.toFixed(2) }}</span>
+                      </div>
+                      <!-- 叶子节点展开显示实际库存 -->
+                      <div v-if="leaf._productCount" class="leaf-inventory">
+                        <el-table :data="invByWarehouse.get(leaf.id) || []" stripe border size="small">
+                          <el-table-column prop="productCode" label="编码" width="100" />
+                          <el-table-column prop="productName" label="商品" min-width="130" />
+                          <el-table-column prop="batchNo" label="批次" width="80" />
+                          <el-table-column prop="quantity" label="数量" width="70" align="center">
+                            <template #default="{ row }"><span style="font-weight:600;">{{ row.quantity }}</span></template>
+                          </el-table-column>
+                          <el-table-column label="均价" width="100" align="right">
+                            <template #default="{ row }">¥{{ (row.costPrice || 0).toFixed(2) }}</template>
+                          </el-table-column>
+                          <el-table-column label="金额" width="100" align="right">
+                            <template #default="{ row }">¥{{ ((row.costPrice || 0) * (row.quantity || 0)).toFixed(2) }}</template>
+                          </el-table-column>
+                        </el-table>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </template>
+              <template v-else>
+                <div class="tree-node tree-level-4">
+                  <span class="node-name">{{ child.name }}</span>
+                  <el-tag size="small" type="info">{{ child.level }}级</el-tag>
+                  <span class="node-stats" v-if="child._productCount">{{ child._productCount }} 种 · {{ child._totalQty }} 件 · ¥{{ child._totalAmt.toFixed(2) }}</span>
+                </div>
+                <div v-if="child._productCount" class="leaf-inventory">
+                  <el-table :data="invByWarehouse.get(child.id) || []" stripe border size="small">
+                    <el-table-column prop="productCode" label="编码" width="100" />
+                    <el-table-column prop="productName" label="商品" min-width="130" />
+                    <el-table-column prop="batchNo" label="批次" width="80" />
+                    <el-table-column prop="quantity" label="数量" width="70" align="center">
+                      <template #default="{ row }"><span style="font-weight:600;">{{ row.quantity }}</span></template>
+                    </el-table-column>
+                    <el-table-column label="均价" width="100" align="right">
+                      <template #default="{ row }">¥{{ (row.costPrice || 0).toFixed(2) }}</template>
+                    </el-table-column>
+                    <el-table-column label="金额" width="100" align="right">
+                      <template #default="{ row }">¥{{ ((row.costPrice || 0) * (row.quantity || 0)).toFixed(2) }}</template>
+                    </el-table-column>
+                  </el-table>
+                </div>
+              </template>
+            </div>
+          </template>
+        </div>
       </div>
 
-      <div v-for="group in grouped" :key="group.wId" class="warehouse-card">
-        <div class="warehouse-header">
-          <div class="warehouse-title">
-            <svg viewBox="0 0 24 24" width="20" height="20" fill="#409eff"><path d="M19 8h-1V3H6v5H5c-1.66 0-3 1.34-3 3v6h4v4h12v-4h4v-6c0-1.66-1.34-3-3-3zM8 5h8v3H8V5zm8 14H8v-4h8v4zm2-4v-2H6v2H4v-4c0-.55.45-1 1-1h14c.55 0 1 .45 1 1v4h-2z"/></svg>
-            <span>{{ group.wName }}</span>
-            <span class="warehouse-path">{{ group.path }}</span>
-            <span class="warehouse-stats">
-              {{ group.items.length }} 种商品 · ¥{{ warehouseSubtotal(group.items).amount.toFixed(2) }}
-            </span>
-          </div>
-        </div>
-
-        <el-table :data="group.items" stripe border>
-          <el-table-column prop="productCode" label="编码" width="110" />
-          <el-table-column prop="productName" label="商品名称" min-width="140" />
-          <el-table-column prop="batchNo" label="批次" width="90" />
-          <el-table-column prop="quantity" label="数量" sortable width="80" align="center">
-            <template #default="{ row }">
-              <span :style="{ color: row.quantity <= 0 ? '#f56c6c' : '#303133', fontWeight: 600 }">{{ row.quantity }}</span>
-            </template>
-          </el-table-column>
-          <el-table-column label="均价" width="110" align="right">
-            <template #header>
-              <span>均价<el-tooltip content="移动加权平均" placement="top"><span style="cursor:help;color:#999;font-size:12px;">ⓘ</span></el-tooltip></span>
-            </template>
-            <template #default="{ row }">¥{{ (row.costPrice || 0).toFixed(2) }}</template>
-          </el-table-column>
-          <el-table-column label="金额" sortable width="110" align="right">
-            <template #default="{ row }">¥{{ ((row.costPrice || 0) * (row.quantity || 0)).toFixed(2) }}</template>
-          </el-table-column>
-          <el-table-column prop="updateTime" label="变动" width="150">
-            <template #default="{ row }">{{ row.updateTime ? row.updateTime.substring(0, 16) : '-' }}</template>
-          </el-table-column>
-        </el-table>
-
-        <div class="warehouse-footer">
-          <span>小计：{{ warehouseSubtotal(group.items).qty }} 件 &nbsp;·&nbsp; 金额 ¥{{ warehouseSubtotal(group.items).amount.toFixed(2) }}</span>
-        </div>
-      </div>
-
-      <!-- 总计 -->
-      <div class="grand-total">
-        <span>总计：{{ grandTotal.qty }} 件 &nbsp;·&nbsp; 金额 ¥{{ grandTotal.amount.toFixed(2) }}</span>
+      <div class="grand-total" v-if="treeWithStock.length">
+        <span>总计：{{ grandTotal.qty }} 件 · 金额 ¥{{ grandTotal.amt.toFixed(2) }}</span>
       </div>
     </div>
   </div>
 </template>
 
 <style scoped>
-.warehouse-card {
-  margin-bottom: 20px;
-  border: 1px solid #e4e7ed;
-  border-radius: 8px;
-  overflow: hidden;
-  background: #fff;
+.tree-root { margin-bottom: 4px; border: 1px solid #e4e7ed; border-radius: 6px; overflow: hidden; background: #fff; }
+.tree-node {
+  display: flex; align-items: center; gap: 8px; padding: 10px 16px;
+  cursor: pointer; user-select: none; transition: background .15s;
+  border-bottom: 1px solid #f0f0f0;
 }
-.warehouse-header {
-  background: #f5f7fa;
-  padding: 12px 20px;
-  border-bottom: 1px solid #e4e7ed;
-}
-.warehouse-title {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 16px;
-  font-weight: 600;
-  color: #303133;
-}
-.warehouse-path {
-  font-size: 12px;
-  font-weight: 400;
-  color: #a8abb2;
-  margin: 0 12px;
-  max-width: 400px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.warehouse-stats {
-  font-size: 13px;
-  font-weight: 400;
-  color: #909399;
-  margin-left: auto;
-}
-.warehouse-footer {
-  background: #fafafa;
-  padding: 10px 20px;
-  text-align: right;
-  font-size: 14px;
-  color: #606266;
-  border-top: 1px solid #e4e7ed;
-}
+.tree-node:hover { background: #f5f7fa; }
+.toggle-icon { font-size: 10px; color: #909399; width: 12px; text-align: center; flex-shrink: 0; }
+.node-name { font-weight: 600; color: #303133; white-space: nowrap; }
+.node-stats { font-size: 12px; color: #909399; margin-left: auto; white-space: nowrap; }
+.tree-level-1 { background: #ecf5ff; font-size: 15px; }
+.tree-level-2 { font-size: 14px; }
+.tree-level-3 { font-size: 13px; }
+.tree-level-4 { cursor: default; font-size: 13px; }
+.leaf-inventory { margin: 8px 16px; }
 .grand-total {
-  text-align: right;
-  padding: 16px 20px;
-  font-size: 16px;
-  font-weight: 600;
-  color: #303133;
-  background: #f5f7fa;
-  border-radius: 8px;
+  text-align: right; padding: 14px 20px; margin-top: 8px;
+  font-size: 15px; font-weight: 600; color: #303133;
+  background: #f5f7fa; border-radius: 6px;
 }
 </style>

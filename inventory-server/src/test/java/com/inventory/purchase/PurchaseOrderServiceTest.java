@@ -28,6 +28,9 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
+import cn.dev33.satoken.stp.StpUtil;
+import org.mockito.MockedStatic;
+
 @ExtendWith(MockitoExtension.class)
 class PurchaseOrderServiceTest {
 
@@ -85,7 +88,10 @@ class PurchaseOrderServiceTest {
         verify(purchaseOrderMapper).updateById(argThat(o -> o.getStatus() == OrderStatus.PENDING));
 
         // 审核通过后创建库存记录
-        service.approve(1L);
+        try (MockedStatic<StpUtil> stp = mockStatic(StpUtil.class)) {
+            stp.when(StpUtil::getLoginIdAsLong).thenReturn(1L);
+            service.approve(1L);
+        }
         verify(inventoryMapper).insert(argThat(inv ->
             inv.getQuantity() == 100 && inv.getProductId() == 1L && inv.getWarehouseId() == 1L
         ));
@@ -111,7 +117,10 @@ class PurchaseOrderServiceTest {
 
         service.submit(1L);
 
-        service.approve(1L);
+        try (MockedStatic<StpUtil> stp = mockStatic(StpUtil.class)) {
+            stp.when(StpUtil::getLoginIdAsLong).thenReturn(1L);
+            service.approve(1L);
+        }
 
         // 验证：updateById 至少被调用一次，且数量从50→150
         verify(inventoryMapper, atLeastOnce()).updateById(argThat(inv ->

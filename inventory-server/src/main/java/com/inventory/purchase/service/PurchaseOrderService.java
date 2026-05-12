@@ -129,6 +129,10 @@ public class PurchaseOrderService {
             SysUser u = userMapper.selectById(o.getOperatorId());
             if (u != null) o.setOperatorName(u.getRealName());
         }
+        if (o.getApproverId() != null) {
+            SysUser u = userMapper.selectById(o.getApproverId());
+            if (u != null) o.setApproverName(u.getRealName());
+        }
     }
 
     private void enrichItems(List<PurchaseOrderItem> items) {
@@ -279,6 +283,8 @@ public class PurchaseOrderService {
             inventoryLogMapper.insert(log);
         }
 
+        order.setApproverId(cn.dev33.satoken.stp.StpUtil.getLoginIdAsLong());
+        order.setApproveTime(LocalDateTime.now());
         order.setStatus(OrderStatus.CONFIRMED);
         purchaseOrderMapper.updateById(order);
     }

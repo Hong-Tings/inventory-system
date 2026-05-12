@@ -20,6 +20,8 @@ public class PurchaseOrder {
     private Integer totalQuantity;
     private Integer status;
     private Long operatorId;
+    private Long approverId;
+    private LocalDateTime approveTime;
     private LocalDate orderDate;
     private String remark;
 
@@ -40,6 +42,9 @@ public class PurchaseOrder {
 
     @TableField(exist = false)
     private String operatorName;
+
+    @TableField(exist = false)
+    private String approverName;
 
     @TableField(exist = false)
     private List<PurchaseOrderItem> items;

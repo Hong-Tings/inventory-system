@@ -27,6 +27,9 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
+import cn.dev33.satoken.stp.StpUtil;
+import org.mockito.MockedStatic;
+
 @ExtendWith(MockitoExtension.class)
 class TransferServiceTest {
 
@@ -86,7 +89,10 @@ class TransferServiceTest {
         service.submit(1L);
         verify(transferMapper).updateById(argThat(t -> t.getStatus() == OrderStatus.PENDING));
 
-        service.approve(1L);
+        try (MockedStatic<StpUtil> stp = mockStatic(StpUtil.class)) {
+            stp.when(StpUtil::getLoginIdAsLong).thenReturn(1L);
+            service.approve(1L);
+        }
         verify(inventoryMapper).updateById(argThat(i -> i.getQuantity() == 30));
         verify(inventoryMapper).insert(argThat(i ->
             i.getWarehouseId() == 2L && i.getQuantity() == 20));
@@ -107,7 +113,12 @@ class TransferServiceTest {
 
         service.submit(1L);
 
-        assertThrows(BusinessException.class, () -> service.approve(1L));
+        assertThrows(BusinessException.class, () -> {
+            try (MockedStatic<StpUtil> stp = mockStatic(StpUtil.class)) {
+                stp.when(StpUtil::getLoginIdAsLong).thenReturn(1L);
+                service.approve(1L);
+            }
+        });
     }
 
     @Test

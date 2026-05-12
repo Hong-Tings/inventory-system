@@ -80,7 +80,9 @@ onMounted(fetchDetail)
         <el-descriptions-item label="总金额">¥{{ order.totalAmount?.toFixed(2) }}</el-descriptions-item>
         <el-descriptions-item label="总数量">{{ order.totalQuantity }}</el-descriptions-item>
         <el-descriptions-item label="操作人">{{ order.operatorName }}</el-descriptions-item>
-        <el-descriptions-item label="备注" :span="2">{{ order.remark || '-' }}</el-descriptions-item>
+        <el-descriptions-item v-if="order.approverName" label="审核人">{{ order.approverName }}</el-descriptions-item>
+        <el-descriptions-item v-if="order.approveTime" label="审核时间">{{ order.approveTime }}</el-descriptions-item>
+        <el-descriptions-item label="备注" :span="1">{{ order.remark || '-' }}</el-descriptions-item>
       </el-descriptions>
     </div>
     <div class="detail-card" v-if="order?.items">

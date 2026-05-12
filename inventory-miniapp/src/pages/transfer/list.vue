@@ -47,7 +47,7 @@ onPullDownRefresh(() => { fetchList(); uni.stopPullDownRefresh() })
       </view>
     </view>
     <view v-else>
-      <view v-for="item in list" :key="item.id" class="card"
+      <view v-for="item in list" :key="item.id" class="card" @click="goDetail(item.id)"
         :style="{ borderLeftColor: item.status === 1 ? '#2e7d32' : item.status === 2 ? '#c62828' : status === 4 ? '#ff9800' : '#e0e0e0' }">
         <view class="card-header">
           <view style="display:flex;align-items:center;gap:8px;">
@@ -78,4 +78,6 @@ onPullDownRefresh(() => { fetchList(); uni.stopPullDownRefresh() })
 </template>
 
 <style scoped>
+.search-btn { background: #2e7d32; color: #fff; border-radius: 10px; padding: 0 16px; font-size: 13px; display: flex; align-items: center; white-space: nowrap; }
+.reset-btn { background: #f5f5f5; color: #666; border-radius: 10px; padding: 0 16px; font-size: 13px; display: flex; align-items: center; white-space: nowrap; }
 </style>

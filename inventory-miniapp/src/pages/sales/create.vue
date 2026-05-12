@@ -1,8 +1,10 @@
 <script setup>
-import { ref, onMounted, computed, watch } from 'vue'
+import { ref, onMounted, computed } from 'vue'
+import { onLoad } from '@dcloudio/uni-app'
 import request from '@/api/request'
 import FloatingHome from '@/components/FloatingHome'
 
+const editingId = ref(null)
 const customers = ref([])
 const products = ref([])
 const warehouseStock = ref({})
@@ -24,11 +26,30 @@ const form = ref({
   orderDate: new Date().toISOString().slice(0, 10), remark: '', items: [],
 })
 
+onLoad((options) => {
+  if (options?.id) editingId.value = Number(options.id)
+})
+
 onMounted(async () => {
   const [cRes, tRes, pRes] = await Promise.all([
     request.get('/customer/list'), request.get('/warehouse/tree'), request.get('/product/list'),
   ])
   customers.value = cRes.data; warehouseTree.value = tRes.data || []; products.value = pRes.data
+
+  if (editingId.value) {
+    const res = await request.get(`/sales-order/${editingId.value}`)
+    const data = res.data
+    form.value.customerId = data.customerId
+    form.value.warehouseId = data.warehouseId
+    form.value.salesman = data.salesman || ''
+    form.value.orderDate = data.orderDate
+    form.value.remark = data.remark || ''
+    form.value.items = (data.items || []).map(i => ({
+      productId: i.productId, productName: i.productName, spec: i.spec || '',
+      quantity: i.quantity, unitPrice: i.unitPrice, amount: i.amount, batchNo: i.batchNo || '',
+    }))
+    if (data.warehouseId) loadStock(data.warehouseId)
+  }
 })
 
 // 仓库级联
@@ -129,8 +150,13 @@ async function handleSubmit() {
   }
   submitting.value = true
   try {
-    const res = await request.post('/sales-order', form.value)
-    await request.put(`/sales-order/${res.data}/submit`)
+    if (editingId.value) {
+      await request.put(`/sales-order/${editingId.value}/draft`, form.value)
+      await request.put(`/sales-order/${editingId.value}/submit`)
+    } else {
+      const res = await request.post('/sales-order', form.value)
+      await request.put(`/sales-order/${res.data}/submit`)
+    }
     uni.showToast({ title: '已提交审批', icon: 'success' })
     setTimeout(() => uni.switchTab({ url: '/pages/sales/list' }), 300)
   } finally { submitting.value = false }
@@ -239,7 +265,7 @@ async function handleSubmit() {
       </view>
     </view>
 
-    <button class="submit-btn" :loading="submitting" @click="handleSubmit">确认出库</button>
+    <button class="submit-btn" :loading="submitting" @click="handleSubmit">{{ editingId ? '保存并提交' : '确认出库' }}</button>
     <FloatingHome />
   </view>
 </template>

@@ -128,6 +128,10 @@ public class TransferService {
             SysUser u = userMapper.selectById(t.getOperatorId());
             if (u != null) t.setOperatorName(u.getRealName());
         }
+        if (t.getApproverId() != null) {
+            SysUser u = userMapper.selectById(t.getApproverId());
+            if (u != null) t.setApproverName(u.getRealName());
+        }
     }
 
     private void enrichItems(List<InventoryTransferItem> items) {
@@ -335,6 +339,8 @@ public class TransferService {
             inventoryLogMapper.insert(inLog);
         }
 
+        transfer.setApproverId(cn.dev33.satoken.stp.StpUtil.getLoginIdAsLong());
+        transfer.setApproveTime(LocalDateTime.now());
         transfer.setStatus(OrderStatus.CONFIRMED);
         transferMapper.updateById(transfer);
     }

@@ -87,6 +87,8 @@ onMounted(fetchDetail)
           <el-tag :type="statusMap[order.status]?.type as any">{{ statusMap[order.status]?.label }}</el-tag>
         </el-descriptions-item>
         <el-descriptions-item label="操作人">{{ order.operatorName }}</el-descriptions-item>
+        <el-descriptions-item v-if="order.approverName" label="审核人">{{ order.approverName }}</el-descriptions-item>
+        <el-descriptions-item v-if="order.approveTime" label="审核时间">{{ order.approveTime }}</el-descriptions-item>
         <el-descriptions-item label="日期">{{ order.orderDate }}</el-descriptions-item>
         <el-descriptions-item label="备注" :span="3">{{ order.remark || '-' }}</el-descriptions-item>
       </el-descriptions>

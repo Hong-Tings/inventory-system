@@ -67,6 +67,8 @@ async function cancelOrder() {
         <view class="r"><text class="l">仓库</text><text class="v">{{ order.warehouseName || '-' }}</text></view>
         <view class="r"><text class="l">出库日期</text><text class="v">{{ order.orderDate || '-' }}</text></view>
         <view class="r"><text class="l">销售员</text><text class="v">{{ order.salesman || '-' }}</text></view>
+        <view v-if="order.approverName" class="r"><text class="l">审核人</text><text class="v">{{ order.approverName }}</text></view>
+        <view v-if="order.approveTime" class="r"><text class="l">审核时间</text><text class="v">{{ order.approveTime.substring(0, 16) }}</text></view>
       </view>
       <view class="pl">
         <text class="pl-title">商品明细</text>
@@ -84,6 +86,7 @@ async function cancelOrder() {
 
     <view class="action-bar">
       <button v-if="order?.status === 0" class="btn-submit" :loading="actionLoading" @click="submitOrder">提交出库</button>
+      <button v-if="order?.status === 0" class="btn-edit" :loading="actionLoading" @click="uni.navigateTo({ url: '/pages/sales/create?id=' + order.id })">编辑</button>
       <button v-if="order?.status === 0" class="btn-cancel" :loading="actionLoading" @click="cancelOrder">取消</button>
     </view>
     <FloatingHome />
@@ -108,5 +111,6 @@ async function cancelOrder() {
 .pi-total { display: flex; justify-content: space-between; padding: 12px 0 0; font-weight: 600; font-size: 14px; border-top: 1px solid #eee; margin-top: 8px; }
 .action-bar { display: flex; gap: 10px; margin-top: 12px; }
 .btn-submit { flex: 1; background: #2e7d32; color: #fff; border: none; border-radius: 8px; height: 42px; line-height: 42px; font-size: 15px; }
+.btn-edit { flex: 1; background: #fff; color: #2e7d32; border: 1.5px solid #2e7d32; border-radius: 8px; height: 42px; line-height: 42px; font-size: 15px; font-weight: 600; }
 .btn-cancel { flex: 1; background: #fff; color: #666; border: 1px solid #dcdfe6; border-radius: 8px; height: 42px; line-height: 42px; font-size: 15px; }
 </style>

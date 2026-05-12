@@ -97,4 +97,6 @@ onPullDownRefresh(() => { fetchData(); uni.stopPullDownRefresh() })
   box-shadow: 0 1px 4px rgba(0,0,0,0.04); color: #666;
 }
 .pill-btn.active { color: #2e7d32; font-weight: 600; }
+.search-btn { background: #2e7d32; color: #fff; border-radius: 10px; padding: 0 16px; font-size: 13px; display: flex; align-items: center; white-space: nowrap; }
+.reset-btn { background: #f5f5f5; color: #666; border-radius: 10px; padding: 0 16px; font-size: 13px; display: flex; align-items: center; white-space: nowrap; }
 </style>

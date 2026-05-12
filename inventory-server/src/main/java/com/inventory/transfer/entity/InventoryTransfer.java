@@ -18,6 +18,8 @@ public class InventoryTransfer {
     private Integer totalQuantity;
     private Integer status;
     private Long operatorId;
+    private Long approverId;
+    private LocalDateTime approveTime;
     @ColumnWidth(26)
     private LocalDate orderDate;
     private String remark;
@@ -38,6 +40,9 @@ public class InventoryTransfer {
 
     @TableField(exist = false)
     private String operatorName;
+
+    @TableField(exist = false)
+    private String approverName;
 
     @TableField(exist = false)
     private Long outWarehouseId;

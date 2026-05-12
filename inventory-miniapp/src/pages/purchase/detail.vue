@@ -92,6 +92,14 @@ async function cancelOrder() {
             <text class="detail-label">操作人</text>
             <text class="detail-value">{{ order.operatorName || '-' }}</text>
           </view>
+          <view v-if="order.approverName">
+            <text class="detail-label">审核人</text>
+            <text class="detail-value">{{ order.approverName }}</text>
+          </view>
+          <view v-if="order.approveTime">
+            <text class="detail-label">审核时间</text>
+            <text class="detail-value">{{ order.approveTime.substring(0, 16) }}</text>
+          </view>
         </view>
         <view v-if="order.remark" style="margin-top:12px;">
           <text class="detail-label">备注</text>
@@ -131,6 +139,7 @@ async function cancelOrder() {
 
     <view style="display:flex;gap:10px;margin-top:12px;padding-bottom:20px;">
       <button v-if="order?.status === 0" class="btn-pri" :loading="actionLoading" @click="submitOrder">提交入库</button>
+      <button v-if="order?.status === 0" class="btn-edit" :loading="actionLoading" @click="uni.navigateTo({ url: '/pages/purchase/create?id=' + order.id })">编辑</button>
       <button v-if="order?.status === 0" class="btn-sec" :loading="actionLoading" @click="cancelOrder">取消</button>
     </view>
     <FloatingHome />
@@ -139,5 +148,6 @@ async function cancelOrder() {
 
 <style scoped>
 .btn-pri { flex:1; background:linear-gradient(135deg,#2e7d32,#43a047); color:#fff; border:none; border-radius:10px; height:44px; line-height:44px; font-size:15px; font-weight:600; box-shadow:0 4px 12px rgba(46,125,50,0.25); }
+.btn-edit { flex:1; background:#fff; color:#2e7d32; border:1.5px solid #2e7d32; border-radius:10px; height:44px; line-height:44px; font-size:15px; font-weight:600; }
 .btn-sec { flex:1; background:#fff; color:#666; border:1px solid #e0e0e0; border-radius:10px; height:44px; line-height:44px; font-size:15px; }
 </style>

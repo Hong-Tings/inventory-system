@@ -44,14 +44,14 @@ const whPathMap = computed(() => {
   return m
 })
 
-// 搜索模式：按仓库分组的库存列表
+// 搜索模式：按商品分组的库存列表
 const searchResults = computed(() => {
   if (!keyword.value || !allList.value.length) return []
   const groups = new Map()
   for (const inv of allList.value) {
-    const wid = inv.warehouseId
-    if (!groups.has(wid)) groups.set(wid, { warehouseId: wid, warehouseName: inv.warehouseName || '', path: whPathMap.value.get(wid) || '', items: [] })
-    groups.get(wid).items.push(inv)
+    const pid = inv.productId
+    if (!groups.has(pid)) groups.set(pid, { productId: pid, productName: inv.productName || '', productCode: inv.productCode || '', items: [] })
+    groups.get(pid).items.push({ ...inv, _path: whPathMap.value.get(inv.warehouseId) || inv.warehouseName || '' })
   }
   return [...groups.values()]
 })
@@ -189,22 +189,20 @@ onPullDownRefresh(() => { fetchData(); uni.stopPullDownRefresh() })
 
     <view v-if="loading" class="loading">加载中...</view>
     <view v-else-if="keyword" class="result-wrap">
-      <!-- 搜索模式：按仓库分组显示 -->
-      <view v-for="group in searchResults" :key="group.warehouseId" class="wh-group">
-        <view class="wh-group-header">
-          <text class="wh-group-path">{{ group.path }}</text>
-          <text class="wh-group-count">{{ group.items.length }}项</text>
+      <!-- 搜索模式：按商品分组显示 -->
+      <view v-for="group in searchResults" :key="group.productId" class="prod-group">
+        <view class="prod-group-header">
+          <text class="prod-group-name">{{ group.productName }}</text>
+          <text v-if="group.productCode" class="prod-group-code">{{ group.productCode }}</text>
+          <text class="prod-group-count">{{ group.items.length }}仓</text>
         </view>
         <view v-for="inv in group.items" :key="inv.id || inv.productId" class="inv-card">
+          <view class="inv-path">{{ inv._path }}</view>
           <view class="inv-row">
             <view class="inv-info">
-              <text class="inv-name">{{ inv.productName }}</text>
-              <text class="inv-code">{{ inv.productCode }}</text>
+              <text class="inv-qty" :class="{ low: (inv.quantity || 0) <= 5 }">{{ inv.quantity }}</text>
+              <text>批次: {{ inv.batchNo || '-' }}</text>
             </view>
-            <text class="inv-qty" :class="{ low: (inv.quantity || 0) <= 5 }">{{ inv.quantity }}</text>
-          </view>
-          <view class="inv-footer">
-            <text>批次: {{ inv.batchNo || '-' }}</text>
             <text>仓码: {{ inv.warehouseCode || '-' }}</text>
             <text>均价 ¥{{ (inv.costPrice || 0).toFixed(2) }}</text>
             <text>¥{{ ((inv.costPrice || 0) * (inv.quantity || 0)).toFixed(2) }}</text>
@@ -287,10 +285,12 @@ onPullDownRefresh(() => { fetchData(); uni.stopPullDownRefresh() })
 .inv-footer { display: flex; gap: 12px; margin-top: 6px; font-size: 11px; color: #aaa; }
 .grand-total { text-align: right; padding: 14px 16px; font-size: 14px; font-weight: 600; color: #303133; }
 .result-wrap { padding-bottom: 4px; }
-.wh-group { margin-bottom: 12px; }
-.wh-group-header { display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; background: #f0f4f0; border-radius: 6px; margin-bottom: 6px; }
-.wh-group-path { font-size: 12px; color: #2e7d32; font-weight: 500; flex: 1; }
-.wh-group-count { font-size: 11px; color: #999; white-space: nowrap; margin-left: 8px; }
+.prod-group { margin-bottom: 12px; }
+.prod-group-header { display: flex; align-items: center; gap: 8px; padding: 10px 12px; background: #2e7d32; border-radius: 6px 6px 0 0; }
+.prod-group-name { font-size: 14px; font-weight: 600; color: #fff; }
+.prod-group-code { font-size: 11px; color: #c8e6c9; }
+.prod-group-count { font-size: 11px; color: #c8e6c9; margin-left: auto; white-space: nowrap; }
+.inv-path { font-size: 11px; color: #2e7d32; margin-bottom: 4px; padding: 2px 6px; background: #e8f5e9; border-radius: 3px; display: inline-block; }
 .picker-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 999; display: flex; align-items: flex-end; }
 .picker-modal { background: #fff; border-radius: 16px 16px 0 0; width: 100%; max-height: 70vh; display: flex; flex-direction: column; }
 .picker-header { display: flex; align-items: center; justify-content: space-between; padding: 16px; border-bottom: 1px solid #eee; }

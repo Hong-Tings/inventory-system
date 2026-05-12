@@ -36,6 +36,13 @@ function handleReset() {
   query.minTotalItems = undefined; query.maxTotalItems = undefined; query.minDiffItems = undefined; query.maxDiffItems = undefined;
   query.operatorName = ''; query.approverName = ''; handleSearch()
 }
+async function handleApprove(row: StockTake) {
+  try {
+    await ElMessageBox.confirm(`确认审核通过盘点单「${row.orderNo}」？`, '审核确认', { type: 'info' })
+  } catch { return }
+  await request.put(`/stock-take/${row.id}/approve`)
+  ElMessage.success('已审核'); fetchData()
+}
 async function handleDelete(row: StockTake) {
   try {
     const { value } = await ElMessageBox.prompt(`确定作废盘点单「${row.orderNo}」？`, '作废确认', {
@@ -125,6 +132,7 @@ onMounted(async () => {
         <el-table-column label="操作" width="200" fixed="right">
           <template #default="{ row }">
             <el-button size="small" @click="router.push(`/stocktake/${row.id}`)">详情</el-button>
+            <el-button v-if="userStore.isAdmin && row.status === 0" size="small" type="success" @click="handleApprove(row)">审核</el-button>
             <el-button v-if="userStore.isAdmin && row.status !== 2" size="small" type="danger" @click="handleDelete(row)">作废</el-button>
           </template>
         </el-table-column>

@@ -54,6 +54,25 @@ async function handleDelete(row: SalesOrder) {
     ElMessage.success('已作废'); fetchData()
   } catch {} // cancelled or error
 }
+async function handleApprove(row: SalesOrder) {
+  try {
+    await ElMessageBox.confirm(`确认审核通过出库单「${row.orderNo}」？通过后将扣减库存。`, '审核确认', { type: 'info' })
+  } catch { return }
+  await request.put(`/sales-order/${row.id}/approve`)
+  ElMessage.success('已审核通过'); fetchData()
+}
+async function handleReject(row: SalesOrder) {
+  try {
+    const { value } = await ElMessageBox.prompt(`确定驳回出库单「${row.orderNo}」？`, '驳回', {
+      inputPlaceholder: '请填写驳回原因（必填）',
+      inputValidator: (val: string) => !!val.trim(),
+      inputErrorMessage: '驳回原因不能为空',
+      type: 'warning',
+    })
+    await request.put(`/sales-order/${row.id}/reject`, { reason: value })
+    ElMessage.success('已驳回'); fetchData()
+  } catch {}
+}
 async function handleBatchDelete() {
   try {
     const { value } = await ElMessageBox.prompt(`确定作废选中的 ${selectedIds.value.length} 个出库单？`, '批量作废确认', {
@@ -146,6 +165,8 @@ onMounted(async () => {
           <template #default="{ row }">
             <el-button size="small" @click="router.push(`/sales/${row.id}`)">详情</el-button>
             <el-button v-if="row.status === 0" size="small" @click="router.push(`/sales/create?edit=${row.id}`)">编辑</el-button>
+            <el-button v-if="userStore.isAdmin && row.status === 4" size="small" type="success" @click="handleApprove(row)">通过</el-button>
+            <el-button v-if="userStore.isAdmin && row.status === 4" size="small" type="warning" @click="handleReject(row)">驳回</el-button>
             <el-button v-if="row.status === 0" size="small" type="warning" @click="handleCancel(row)">取消</el-button>
             <el-button v-if="row.status === 1" size="small" type="warning" @click="handleCancel(row)">取消出库</el-button>
             <el-button v-if="userStore.isAdmin && (row.status === 0 || row.status === 2)" size="small" type="danger" @click="handleDelete(row)">作废</el-button>

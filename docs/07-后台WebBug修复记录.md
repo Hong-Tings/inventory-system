@@ -174,7 +174,8 @@
 <!-- 10.库存流水添加导出excel功能，并且涉及日期或者时间的栏宽保持180像素
 11.库存盘点添加导出excel功能，记得筛选已作废的数据，
 12.库存调拨添加导出excel功能，记得筛选已作废的数据， -->
-<!-- 9.新增仓库点击保存显示系统内部错误: [DuplicateKeyException] ### Error updating database. Cause: java.sql.SQLIntegrityConstraintViolationException: Duplicate entry 'WH20260429001' for key 'warehouse.uk_code' ### The error may exist in com/inventory/warehouse/mapper/WarehouseMapper.java (best guess) ### The error may involve com.inventory.warehouse.mapper.WarehouseMapper.insert-Inline ### The error occurred while setting parameters ### SQL: INSERT INTO warehouse ( code, name, contact, phone, address, status, remark, create_time, update_time ) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ? ) ### Cause: java.sql.SQLIntegrityConstraintViolationException: Duplicate entry 'WH20260429001' for key 'warehouse.uk_code' ; Duplicate entry 'WH20260429001' for key 'warehouse.uk_code'。怎么彻底解决系统内类似的问题，怎么天天爆这种错 -->
+<!-- 9.新增仓库点击保存显示系统内部错误: [DuplicateKeyException] ### Error updating database. Cause: java.sql.SQLIntegrityConstraintViolationException: Duplicate entry 'WH20260429001' for 
+key 'warehouse.uk_code' ### The error may exist in com/inventory/warehouse/mapper/WarehouseMapper.java (best guess) ### The error may involve com.inventory.warehouse.mapper.WarehouseMapper.insert-Inline ### The error occurred while setting parameters ### SQL: INSERT INTO warehouse ( code, name, contact, phone, address, status, remark, create_time, update_time ) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ? ) ### Cause: java.sql.SQLIntegrityConstraintViolationException: Duplicate entry 'WH20260429001' for key 'warehouse.uk_code' ; Duplicate entry 'WH20260429001' for key 'warehouse.uk_code'。怎么彻底解决系统内类似的问题，怎么天天爆这种错 -->
 
 
 

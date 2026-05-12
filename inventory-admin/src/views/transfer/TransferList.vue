@@ -67,6 +67,25 @@ async function handleDelete(row: any) {
     ElMessage.success('已作废'); fetchData()
   } catch {}
 }
+async function handleApprove(row: any) {
+  try {
+    await ElMessageBox.confirm(`确认审核通过调拨单「${row.orderNo}」？通过后将更新库存。`, '审核确认', { type: 'info' })
+  } catch { return }
+  await request.put(`/transfer/${row.id}/approve`)
+  ElMessage.success('已审核通过'); fetchData()
+}
+async function handleReject(row: any) {
+  try {
+    const { value } = await ElMessageBox.prompt(`确定驳回调拨单「${row.orderNo}」？`, '驳回', {
+      inputPlaceholder: '请填写驳回原因（必填）',
+      inputValidator: (val: string) => !!val.trim(),
+      inputErrorMessage: '驳回原因不能为空',
+      type: 'warning',
+    })
+    await request.put(`/transfer/${row.id}/reject`, { reason: value })
+    ElMessage.success('已驳回'); fetchData()
+  } catch {}
+}
 async function handleBatchDelete() {
   if (selectedIds.value.length === 0) { ElMessage.warning('请选择要删除的调拨单'); return }
   try {
@@ -140,6 +159,8 @@ onMounted(async () => {
           <template #default="{ row }">
             <el-button size="small" @click="router.push(`/transfer/${row.id}`)">详情</el-button>
             <el-button v-if="row.status === 0" size="small" @click="router.push(`/transfer/create?edit=${row.id}`)">编辑</el-button>
+            <el-button v-if="userStore.isAdmin && row.status === 4" size="small" type="success" @click="handleApprove(row)">通过</el-button>
+            <el-button v-if="userStore.isAdmin && row.status === 4" size="small" type="warning" @click="handleReject(row)">驳回</el-button>
             <el-button v-if="row.status === 0" size="small" type="warning" @click="handleCancel(row)">取消</el-button>
             <el-button v-if="userStore.isAdmin" size="small" type="danger" @click="handleDelete(row)">作废</el-button>
           </template>

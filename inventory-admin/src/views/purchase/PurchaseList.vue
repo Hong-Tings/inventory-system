@@ -53,6 +53,25 @@ async function handleDelete(row: PurchaseOrder) {
     ElMessage.success('已作废'); fetchData()
   } catch {} // cancelled or error
 }
+async function handleApprove(row: PurchaseOrder) {
+  try {
+    await ElMessageBox.confirm(`确认审核通过入库单「${row.orderNo}」？通过后将更新库存。`, '审核确认', { type: 'info' })
+  } catch { return }
+  await request.put(`/purchase-order/${row.id}/approve`)
+  ElMessage.success('已审核通过'); fetchData()
+}
+async function handleReject(row: PurchaseOrder) {
+  try {
+    const { value } = await ElMessageBox.prompt(`确定驳回入库单「${row.orderNo}」？`, '驳回', {
+      inputPlaceholder: '请填写驳回原因（必填）',
+      inputValidator: (val: string) => !!val.trim(),
+      inputErrorMessage: '驳回原因不能为空',
+      type: 'warning',
+    })
+    await request.put(`/purchase-order/${row.id}/reject`, { reason: value })
+    ElMessage.success('已驳回'); fetchData()
+  } catch {}
+}
 async function handleBatchDelete() {
   try {
     const { value } = await ElMessageBox.prompt(`确定作废选中的 ${selectedIds.value.length} 个入库单？`, '批量作废确认', {
@@ -138,6 +157,8 @@ onMounted(() => { fetchData(); fetchSuppliers(); fetchWarehouses() })
           <template #default="{ row }">
             <el-button size="small" @click="router.push(`/purchase/${row.id}`)">详情</el-button>
             <el-button v-if="row.status === 0" size="small" @click="router.push(`/purchase/create?edit=${row.id}`)">编辑</el-button>
+            <el-button v-if="userStore.isAdmin && row.status === 4" size="small" type="success" @click="handleApprove(row)">通过</el-button>
+            <el-button v-if="userStore.isAdmin && row.status === 4" size="small" type="warning" @click="handleReject(row)">驳回</el-button>
             <el-button v-if="row.status === 0" size="small" type="warning" @click="handleCancel(row)">取消</el-button>
             <el-button v-if="row.status === 1" size="small" type="warning" @click="handleCancel(row)">取消入库</el-button>
             <el-button v-if="userStore.isAdmin && (row.status === 0 || row.status === 2)" size="small" type="danger" @click="handleDelete(row)">作废</el-button>

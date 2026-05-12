@@ -7,6 +7,7 @@ const loading = ref(false)
 const warehouseTree = ref([])
 const allList = ref([])
 const keyword = ref('')
+const searched = ref(false)
 
 // 级联仓库选择
 const whCascade = ref([])
@@ -103,10 +104,11 @@ const flatList = computed(() => {
 
 async function fetchData() {
   loading.value = true
+  searched.value = false
   try {
     const params = { page: 1, size: 999 }
     if (warehouseId.value) params.warehouseId = warehouseId.value
-    if (keyword.value) params.productName = keyword.value
+    if (keyword.value.trim()) { params.productName = keyword.value.trim(); searched.value = true }
     const res = await request.get('/inventory/page', { params })
     allList.value = res.data.records || []
   } finally { loading.value = false }
@@ -118,7 +120,7 @@ async function fetchWarehouseTree() {
 }
 
 function onSearch() { fetchData() }
-function handleReset() { keyword.value = ''; warehouseId.value = null; expanded.clear(); fetchData() }
+function handleReset() { keyword.value = ''; warehouseId.value = null; searched.value = false; expanded.clear(); fetchData() }
 
 // 级联
 function openWarehousePicker() { whCascade.value = []; whOptions.value = warehouseTree.value || []; showWhPicker.value = true }
@@ -188,7 +190,7 @@ onPullDownRefresh(() => { fetchData(); uni.stopPullDownRefresh() })
     </view>
 
     <view v-if="loading" class="loading">加载中...</view>
-    <view v-else-if="keyword" class="result-wrap">
+    <view v-else-if="searched" class="result-wrap">
       <!-- 搜索模式：按商品分组显示 -->
       <view v-for="group in searchResults" :key="group.productId" class="prod-group">
         <view class="prod-group-header">

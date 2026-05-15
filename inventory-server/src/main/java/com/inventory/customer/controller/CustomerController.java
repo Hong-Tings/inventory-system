@@ -49,6 +49,7 @@ public class CustomerController {
         return R.ok(customerService.listAll());
     }
 
+    @SaCheckRole("role_1")
     @Operation(summary = "新增客户")
     @PostMapping
     public R<Void> create(@RequestBody Customer customer) {
@@ -56,6 +57,7 @@ public class CustomerController {
         return R.ok();
     }
 
+    @SaCheckRole("role_1")
     @Operation(summary = "更新客户")
     @PutMapping("/{id}")
     public R<Void> update(@PathVariable Long id, @RequestBody Customer customer) {

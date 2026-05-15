@@ -1,6 +1,7 @@
 package com.inventory.product.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import cn.dev33.satoken.annotation.SaCheckRole;
 import com.inventory.common.result.PageResult;
 import com.inventory.common.result.R;
 import com.inventory.common.util.ExcelUtil;
@@ -59,6 +60,7 @@ public class ProductController {
         return R.ok(product);
     }
 
+    @SaCheckRole("role_1")
     @Operation(summary = "新增商品")
     @PostMapping
     public R<Long> create(@RequestBody Product product) {
@@ -66,6 +68,7 @@ public class ProductController {
         return R.ok(product.getId());
     }
 
+    @SaCheckRole("role_1")
     @Operation(summary = "更新商品")
     @PutMapping("/{id}")
     public R<Void> update(@PathVariable Long id, @RequestBody Product product) {
@@ -74,6 +77,7 @@ public class ProductController {
         return R.ok();
     }
 
+    @SaCheckRole("role_1")
     @Operation(summary = "删除商品")
     @DeleteMapping("/{id}")
     public R<Void> delete(@PathVariable Long id) {
@@ -81,6 +85,7 @@ public class ProductController {
         return R.ok();
     }
 
+    @SaCheckRole("role_1")
     @Operation(summary = "恢复已删除商品")
     @PutMapping("/{id}/restore")
     public R<Void> restore(@PathVariable Long id) {

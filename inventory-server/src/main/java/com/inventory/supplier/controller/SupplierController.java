@@ -65,6 +65,7 @@ public class SupplierController {
         return R.ok(supplierService.listAll());
     }
 
+    @SaCheckRole("role_1")
     @Operation(summary = "新增供应商")
     @PostMapping
     public R<Void> create(@RequestBody Supplier supplier) {
@@ -72,6 +73,7 @@ public class SupplierController {
         return R.ok();
     }
 
+    @SaCheckRole("role_1")
     @Operation(summary = "更新供应商")
     @PutMapping("/{id}")
     public R<Void> update(@PathVariable Long id, @RequestBody Supplier supplier) {

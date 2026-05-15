@@ -124,6 +124,7 @@ public class StockTakeController {
         }
     }
 
+    @SaCheckRole("role_1")
     @Operation(summary = "盘点调整")
     @PutMapping("/{id}/adjust")
     public R<Void> adjust(@PathVariable Long id) {

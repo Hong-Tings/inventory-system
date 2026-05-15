@@ -70,6 +70,7 @@ public class WarehouseController {
         return R.ok(warehouseService.getById(id));
     }
 
+    @SaCheckRole("role_1")
     @Operation(summary = "新增仓库")
     @PostMapping
     public R<Void> create(@RequestBody Warehouse warehouse) {
@@ -77,6 +78,7 @@ public class WarehouseController {
         return R.ok();
     }
 
+    @SaCheckRole("role_1")
     @Operation(summary = "更新仓库")
     @PutMapping("/{id}")
     public R<Void> update(@PathVariable Long id, @RequestBody Warehouse warehouse) {

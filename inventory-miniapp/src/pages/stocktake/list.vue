@@ -9,6 +9,7 @@ const loading = ref(false)
 const keyword = ref('')
 const takeType = ref(null)
 const filterStatus = ref(null)
+const showFilters = ref(false)
 const statusMap = { 0: '盘点中', 1: '已审核', 2: '已调整' }
 const typeOptions = [{ v: null, l: '全部方式' }, { v: 0, l: '全盘' }, { v: 1, l: '抽盘' }]
 const statusOptions = [{ v: null, l: '全部状态' }, { v: 0, l: '盘点中' }, { v: 1, l: '已审核' }, { v: 2, l: '已调整' }]
@@ -39,18 +40,25 @@ onPullDownRefresh(() => { fetchList(); uni.stopPullDownRefresh() })
       <text class="add-btn" @click="uni.navigateTo({ url: '/pages/stocktake/create' })">+ 新建</text>
     </view>
 
-    <view class="search-bar" style="display:flex;gap:6px;flex-wrap:wrap;">
-      <view style="display:flex;gap:6px;flex:1;min-width:200px;">
-        <input v-model="keyword" class="search-input" placeholder="搜索盘点单号" style="flex:1;" @confirm="onSearch" />
-        <view class="search-btn" @click="onSearch">搜索</view>
-        <view class="reset-btn" @click="keyword = ''; takeType = null; filterStatus = null; fetchList()">重置</view>
+    <view class="search-bar" style="display:flex;gap:6px;">
+      <input v-model="keyword" class="search-input" placeholder="搜索盘点单号" style="flex:1;font-size:15px;padding:14px;" @confirm="onSearch" />
+      <view class="search-btn" @click="onSearch">搜索</view>
+      <view class="reset-btn" @click="keyword = ''; takeType = null; filterStatus = null; fetchList()">重置</view>
+      <view class="filter-btn" :class="{ active: takeType != null || filterStatus != null }" @click="showFilters = !showFilters">筛选</view>
+    </view>
+
+    <!-- 折叠筛选栏 -->
+    <view v-if="showFilters" class="filter-bar">
+      <view class="filter-row">
+        <text class="filter-label">方式</text>
+        <picker @change="e => { takeType = typeOptions[e.detail.value]?.v; fetchList() }" :range="typeOptions" range-key="l">
+          <view class="filter-pill" :class="{ on: takeType != null }">{{ typeOptions.find(t => t.v === takeType)?.l || '全部方式' }}</view>
+        </picker>
+        <text class="filter-label" style="margin-left:12px;">状态</text>
+        <picker @change="e => { filterStatus = statusOptions[e.detail.value]?.v; fetchList() }" :range="statusOptions" range-key="l">
+          <view class="filter-pill" :class="{ on: filterStatus != null }">{{ statusOptions.find(s => s.v === filterStatus)?.l || '全部状态' }}</view>
+        </picker>
       </view>
-      <picker @change="e => { takeType = typeOptions[e.detail.value]?.v; fetchList() }" :range="typeOptions" range-key="l">
-        <view class="filter-pill">{{ typeOptions.find(t => t.v === takeType)?.l }}</view>
-      </picker>
-      <picker @change="e => { filterStatus = statusOptions[e.detail.value]?.v; fetchList() }" :range="statusOptions" range-key="l">
-        <view class="filter-pill">{{ statusOptions.find(s => s.v === filterStatus)?.l }}</view>
-      </picker>
     </view>
 
     <view v-if="loading">
@@ -61,7 +69,7 @@ onPullDownRefresh(() => { fetchList(); uni.stopPullDownRefresh() })
       </view>
     </view>
     <view v-else>
-      <view v-for="item in list" :key="item.id" class="card"
+      <view v-for="item in list" :key="item.id" class="card" @click="goDetail(item.id)"
         :style="{ borderLeftColor: item.status === 1 ? '#2e7d32' : item.status === 2 ? '#1565c0' : '#ff9800' }">
         <view class="card-header">
           <view style="display:flex;align-items:center;gap:8px;">
@@ -97,4 +105,11 @@ onPullDownRefresh(() => { fetchList(); uni.stopPullDownRefresh() })
 .filter-pill { background:#fff; border-radius:10px; padding:12px 14px; font-size:13px; white-space:nowrap; box-shadow:0 1px 4px rgba(0,0,0,0.04); }
 .search-btn { background: #2e7d32; color: #fff; border-radius: 10px; padding: 0 16px; font-size: 13px; display: flex; align-items: center; white-space: nowrap; }
 .reset-btn { background: #f5f5f5; color: #666; border-radius: 10px; padding: 0 16px; font-size: 13px; display: flex; align-items: center; white-space: nowrap; }
+.filter-btn { background: #f5f5f5; color: #666; border-radius: 10px; padding: 0 16px; font-size: 13px; display: flex; align-items: center; white-space: nowrap; }
+.filter-btn.active { background: #e8f5e9; color: #2e7d32; font-weight: 600; }
+.filter-bar { background: #fff; border-radius: 10px; padding: 12px; margin-bottom: 10px; box-shadow: 0 1px 4px rgba(0,0,0,0.04); }
+.filter-row { display: flex; align-items: center; gap: 8px; }
+.filter-label { font-size: 12px; color: #888; white-space: nowrap; }
+.filter-pill.on { background: #e8f5e9; color: #2e7d32; font-weight: 600; }
+.date-text { border: 1px solid #dcdfe6; border-radius: 6px; padding: 6px 10px; font-size: 12px; background: #fff; min-width: 90px; display: inline-block; color: #666; }
 </style>

@@ -84,6 +84,11 @@ export const useAppStore = defineStore('app', () => {
         { path: '/system/recycle', title: '已作废列表', icon: 'Delete' },
       ],
     },
+    {
+      path: '/help',
+      title: '使用说明',
+      icon: 'InfoFilled',
+    },
   ])
 
   const toggleSidebar = () => {

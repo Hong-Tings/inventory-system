@@ -257,6 +257,12 @@ public class SalesOrderService {
             return;
         }
         if (order.getStatus() == OrderStatus.CONFIRMED) {
+            // 已出库状态仅管理员可取消（涉及库存回滚）
+            long uid = cn.dev33.satoken.stp.StpUtil.getLoginIdAsLong();
+            var u = userMapper.selectById(uid);
+            if (u == null || u.getRole() == null || u.getRole() != 1) {
+                throw new BusinessException("已出库状态仅管理员可取消");
+            }
             List<SalesOrderItem> items = salesOrderItemMapper.selectList(
                     new LambdaQueryWrapper<SalesOrderItem>().eq(SalesOrderItem::getOrderId, id));
             for (SalesOrderItem item : items) {

@@ -446,6 +446,12 @@ public class TransferService {
 
         // 如果已确认，需要回滚库存
         if (transfer.getStatus() == OrderStatus.CONFIRMED) {
+            // 已完成状态仅管理员可取消（涉及库存回滚）
+            long uid = cn.dev33.satoken.stp.StpUtil.getLoginIdAsLong();
+            SysUser u = userMapper.selectById(uid);
+            if (u == null || u.getRole() == null || u.getRole() != 1) {
+                throw new BusinessException("已完成状态仅管理员可取消");
+            }
             List<InventoryTransferItem> items = transferItemMapper.selectList(
                     new LambdaQueryWrapper<InventoryTransferItem>().eq(InventoryTransferItem::getTransferId, id));
 

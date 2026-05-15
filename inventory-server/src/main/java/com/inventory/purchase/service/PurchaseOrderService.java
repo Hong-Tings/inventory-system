@@ -318,6 +318,12 @@ public class PurchaseOrderService {
         }
 
         if (order.getStatus() == OrderStatus.CONFIRMED) {
+            // 已入库状态仅管理员可取消（涉及库存回滚）
+            long uid = cn.dev33.satoken.stp.StpUtil.getLoginIdAsLong();
+            SysUser u = userMapper.selectById(uid);
+            if (u == null || u.getRole() == null || u.getRole() != 1) {
+                throw new BusinessException("已入库状态仅管理员可取消");
+            }
             List<PurchaseOrderItem> items = purchaseOrderItemMapper.selectList(
                     new LambdaQueryWrapper<PurchaseOrderItem>().eq(PurchaseOrderItem::getOrderId, id));
             for (PurchaseOrderItem item : items) {

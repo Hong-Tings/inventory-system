@@ -169,6 +169,12 @@ const router = createRouter({
           component: () => import('../views/product/CustomerList.vue'),
           meta: { title: '客户管理' },
         },
+        {
+          path: 'help',
+          name: 'Help',
+          component: () => import('../views/help/HelpGuide.vue'),
+          meta: { title: '使用说明' },
+        },
       ],
     },
   ],

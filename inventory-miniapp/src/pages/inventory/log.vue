@@ -7,7 +7,7 @@ import FloatingHome from '@/components/FloatingHome'
 const list = ref([])
 const loading = ref(false)
 const keyword = ref('')
-const orderKeyword = ref('')
+const showFilters = ref(false)
 
 // 级联仓库选择
 const warehouseTree = ref([])
@@ -20,8 +20,7 @@ async function fetchData() {
   loading.value = true
   try {
     const params = { page: 1, size: 50 }
-    if (keyword.value) params.productName = keyword.value
-    if (orderKeyword.value) params.refOrderNo = orderKeyword.value
+    if (keyword.value) { params.productName = keyword.value; params.refOrderNo = keyword.value }
     if (warehouseId.value) params.warehouseId = warehouseId.value
     const res = await request.get('/inventory/log/page', { params })
     list.value = res.data.records
@@ -91,11 +90,17 @@ onPullDownRefresh(() => { fetchData(); uni.stopPullDownRefresh() })
       <text class="page-title">库存流水</text>
     </view>
     <view class="search-row">
-      <input v-model="keyword" class="search-input" placeholder="商品名称/编码" @confirm="onSearch" style="flex:1;" />
-      <input v-model="orderKeyword" class="search-input" placeholder="关联单号" @confirm="onSearch" style="flex:0.8;" />
-      <view class="filter-pill filter-picker" :class="{ on: warehouseId }" @click="openWarehousePicker">{{ whLabel }}</view>
+      <input v-model="keyword" class="search-input" placeholder="商品名称/编码或关联单号" @confirm="onSearch" style="flex:1;" />
       <view class="search-btn" @click="onSearch">搜索</view>
-      <view class="reset-btn" @click="keyword = ''; orderKeyword = ''; warehouseId = null; fetchData()">重置</view>
+      <view class="reset-btn" @click="keyword = ''; warehouseId = null; fetchData()">重置</view>
+      <view class="filter-btn" :class="{ active: warehouseId }" @click="showFilters = !showFilters">筛选</view>
+    </view>
+
+    <view v-if="showFilters" class="filter-bar">
+      <view class="filter-row">
+        <text class="filter-label">仓库</text>
+        <view class="filter-pill filter-picker" :class="{ on: warehouseId }" @click="openWarehousePicker">{{ whLabel }}</view>
+      </view>
     </view>
 
     <!-- 级联仓库弹窗 -->
@@ -154,9 +159,14 @@ onPullDownRefresh(() => { fetchData(); uni.stopPullDownRefresh() })
 
 <style scoped>
 .search-row { display: flex; gap: 8px; margin-bottom: 14px; }
+.filter-bar { background: #fff; border-radius: 10px; padding: 12px; margin-bottom: 10px; box-shadow: 0 1px 4px rgba(0,0,0,0.04); }
+.filter-row { display: flex; align-items: center; gap: 8px; }
+.filter-label { font-size: 12px; color: #888; white-space: nowrap; }
 .search-btn { background: linear-gradient(135deg,#2e7d32,#43a047); color:#fff; border-radius:10px; padding:0 18px; font-size:13px; display:flex; align-items:center; white-space:nowrap; box-shadow:0 2px 8px rgba(46,125,50,0.2); }
 .type-dot { width:8px; height:8px; border-radius:50%; display:inline-block; }
 .reset-btn { background: #f5f5f5; color: #666; border-radius: 10px; padding: 0 16px; font-size: 13px; display: flex; align-items: center; white-space: nowrap; }
+.filter-btn { background: #f5f5f5; color: #666; border-radius: 10px; padding: 0 16px; font-size: 13px; display: flex; align-items: center; white-space: nowrap; }
+.filter-btn.active { background: #e8f5e9; color: #2e7d32; font-weight: 600; }
 .filter-picker { background:#fff; border-radius:10px; padding:0 14px; font-size:13px; display:flex; align-items:center; white-space:nowrap; box-shadow:0 1px 4px rgba(0,0,0,0.04); color:#666; }
 .filter-picker.on { background:#e8f5e9; color:#2e7d32; font-weight:600; }
 .picker-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 999; display: flex; align-items: flex-end; }

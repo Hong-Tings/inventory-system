@@ -39,24 +39,36 @@ public class InventoryLogService {
                 .eq(productId != null, InventoryLog::getProductId, productId)
                 .eq(warehouseId != null, InventoryLog::getWarehouseId, warehouseId)
                 .eq(changeType != null && !changeType.isEmpty(), InventoryLog::getChangeType, changeType)
-                .like(refOrderNo != null && !refOrderNo.isEmpty(), InventoryLog::getRefOrderNo, refOrderNo)
                 .ge(startDate != null, InventoryLog::getCreateTime, startDate)
                 .le(endDate != null, InventoryLog::getCreateTime, endDate)
                 .orderByDesc(InventoryLog::getId);
 
-        // 按商品名称搜索：先查出匹配的商品ID，再过滤库存流水
-        if (productName != null && !productName.isEmpty() && productId == null) {
-            List<Product> matchedProducts = productMapper.selectList(
-                    new LambdaQueryWrapper<Product>()
-                            .like(Product::getName, productName)
-                            .or().like(Product::getCode, productName)
-            );
-            if (!matchedProducts.isEmpty()) {
-                List<Long> productIds = matchedProducts.stream().map(Product::getId).collect(Collectors.toList());
-                wrapper.in(InventoryLog::getProductId, productIds);
-            } else {
-                return page;
+        // 关键字搜索：商品名称/编码 或 关联单号（OR 关系）
+        boolean hasProductKw = productName != null && !productName.isEmpty() && productId == null;
+        boolean hasRefNo = refOrderNo != null && !refOrderNo.isEmpty();
+
+        if (hasProductKw || hasRefNo) {
+            List<Long> productIds = null;
+            if (hasProductKw) {
+                List<Product> matchedProducts = productMapper.selectList(
+                        new LambdaQueryWrapper<Product>()
+                                .like(Product::getName, productName)
+                                .or().like(Product::getCode, productName));
+                if (!matchedProducts.isEmpty()) {
+                    productIds = matchedProducts.stream().map(Product::getId).collect(Collectors.toList());
+                }
             }
+            List<Long> finalProductIds = productIds;
+            wrapper.and(w -> {
+                boolean hasAny = false;
+                if (hasRefNo) { w.like(InventoryLog::getRefOrderNo, refOrderNo); hasAny = true; }
+                if (finalProductIds != null && !finalProductIds.isEmpty()) {
+                    if (hasAny) w.or();
+                    w.in(InventoryLog::getProductId, finalProductIds);
+                    hasAny = true;
+                }
+                if (!hasAny) w.eq(InventoryLog::getId, -1); // 无匹配时返回空
+            });
         }
 
         // 按操作人名称搜索：先查出匹配的用户ID，再过滤库存流水

@@ -53,6 +53,11 @@ function sortLabel() {
   return labels[activeSort.value] + (activeSortDir.value === 'asc' ? '↑' : '↓')
 }
 function setStatusFilter(v) { filterStatus.value = v; fetchData() }
+function handleReset() {
+  keyword.value = ''; filterStatus.value = null
+  activeSort.value = ''; activeSortDir.value = ''; sortField.value = ''; sortDir.value = ''
+  showSort.value = false; fetchData()
+}
 function onScrollToLower() {
   if (!hasMore.value || loading.value) return
   page.value++
@@ -68,7 +73,7 @@ onPullDownRefresh(() => { fetchData(); uni.stopPullDownRefresh() })
     <view style="display:flex;gap:6px;margin-bottom:8px;">
       <input v-model="keyword" class="search-input" placeholder="搜索名称或编码" @confirm="onSearch" style="flex:1;" />
       <view class="search-btn" @click="onSearch">搜索</view>
-      <view class="reset-btn" @click="keyword = ''; filterStatus = null; fetchData()">重置</view>
+      <view class="reset-btn" @click="handleReset()">重置</view>
       <view class="sort-btn" :class="{ active: activeSort }" @click="activeSort ? setSort(activeSort, activeSortDir === 'asc' ? 'desc' : 'asc') : showSort = !showSort">{{ sortLabel() }}</view>
     </view>
     <view v-if="showSort" class="sort-panel">

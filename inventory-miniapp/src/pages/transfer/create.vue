@@ -134,6 +134,12 @@ function scanCode(index) {
 }
 
 async function handleSaveDraft() {
+  if (!form.value.fromWarehouseId || !form.value.toWarehouseId) {
+    uni.showToast({ title: '请选择调出和调入仓库', icon: 'none' }); return
+  }
+  if (!form.value.items.length) {
+    uni.showToast({ title: '请添加商品', icon: 'none' }); return
+  }
   submitting.value = true
   try {
     if (editingId.value) {

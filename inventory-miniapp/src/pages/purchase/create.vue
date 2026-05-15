@@ -164,6 +164,9 @@ function calcAmount(item) {
 }
 
 async function handleSaveDraft() {
+  if (!form.value.warehouseId || !form.value.items.length) {
+    uni.showToast({ title: '请选择仓库并添加商品', icon: 'none' }); return
+  }
   submitting.value = true
   try {
     if (editingId.value) {

@@ -124,9 +124,13 @@ onPullDownRefresh(() => { fetchList(); uni.stopPullDownRefresh() })
       </view>
       <view class="filter-row">
         <text class="filter-label">日期</text>
-        <input v-model="startDate" class="date-input" placeholder="开始日期" type="text" @blur="fetchList" />
+        <picker mode="date" :value="startDate" :end="endDate || undefined" @change="e => { startDate = e.detail.value; fetchList() }">
+          <text class="date-text">{{ startDate || '开始日期' }}</text>
+        </picker>
         <text style="color:#ccc;margin:0 4px;">~</text>
-        <input v-model="endDate" class="date-input" placeholder="结束日期" type="text" @blur="fetchList" />
+        <picker mode="date" :value="endDate" :start="startDate || undefined" @change="e => { endDate = e.detail.value; fetchList() }">
+          <text class="date-text">{{ endDate || '结束日期' }}</text>
+        </picker>
       </view>
     </view>
 
@@ -218,7 +222,7 @@ onPullDownRefresh(() => { fetchList(); uni.stopPullDownRefresh() })
 .filter-pill { background: #f5f5f5; border-radius: 8px; padding: 6px 12px; font-size: 12px; color: #666; white-space: nowrap; }
 .filter-pill.on { background: #e8f5e9; color: #2e7d32; font-weight: 600; }
 .filter-picker { display: inline-flex; align-items: center; }
-.date-input { border: 1px solid #dcdfe6; border-radius: 6px; padding: 6px 8px; font-size: 12px; background: #fff; width: 100px; }
+.date-text { border: 1px solid #dcdfe6; border-radius: 6px; padding: 6px 10px; font-size: 12px; background: #fff; min-width: 90px; display: inline-block; color: #666; }
 
 .picker-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 999; display: flex; align-items: flex-end; }
 .picker-modal { background: #fff; border-radius: 16px 16px 0 0; width: 100%; max-height: 70vh; display: flex; flex-direction: column; }

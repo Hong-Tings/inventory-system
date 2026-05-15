@@ -144,6 +144,19 @@ function calcAmount(item) {
   if (item.quantity && item.unitPrice != null) item.amount = item.quantity * item.unitPrice
 }
 
+async function handleSaveDraft() {
+  submitting.value = true
+  try {
+    if (editingId.value) {
+      await request.put(`/sales-order/${editingId.value}/draft`, form.value)
+    } else {
+      const res = await request.post('/sales-order', form.value)
+      editingId.value = res.data
+    }
+    uni.showToast({ title: '已保存草稿', icon: 'success' })
+  } finally { submitting.value = false }
+}
+
 async function handleSubmit() {
   if (!form.value.warehouseId || !form.value.items.length) {
     uni.showToast({ title: '请填写完整信息', icon: 'none' }); return
@@ -264,7 +277,10 @@ async function handleSubmit() {
       </view>
     </view>
 
-    <button class="submit-btn" :loading="submitting" @click="handleSubmit">{{ editingId ? '保存并提交' : '确认出库' }}</button>
+    <view style="display:flex;gap:10px;position:fixed;bottom:16px;left:16px;right:16px;">
+      <button class="btn-draft" :loading="submitting" @click="handleSaveDraft">保存草稿</button>
+      <button class="btn-submit" :loading="submitting" @click="handleSubmit">{{ editingId ? '保存并提交' : '确认出库' }}</button>
+    </view>
     <FloatingHome />
   </view>
 </template>
@@ -290,7 +306,8 @@ async function handleSubmit() {
 .input.focused { border-color: #2e7d32; border-width: 1.5px; }
 .picker-search .search-input.focused { border-color: #2e7d32; border-width: 1.5px; }
 .amount { font-size: 14px; color: #f56c6c; font-weight: bold; }
-.submit-btn { position: fixed; bottom: 0; left: 0; right: 0; margin: 16px; background: #2e7d32; color: #fff; border: none; border-radius: 8px; height: 44px; line-height: 44px; font-size: 16px; }
+.btn-draft { flex:1; background:#fff; color:#666; border:1px solid #dcdfe6; border-radius:8px; height:44px; line-height:44px; font-size:15px; }
+.btn-submit { flex:1; background: #2e7d32; color: #fff; border: none; border-radius: 8px; height: 44px; line-height: 44px; font-size: 15px; }
 .ic-row { display: flex; align-items: center; gap: 8px; }
 .scan-btn { width: 40px; height: 40px; background: #e8f5e9; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
 .picker-select:active { background: #e8f5e9; }

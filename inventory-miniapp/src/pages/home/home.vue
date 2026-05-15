@@ -113,6 +113,10 @@ function goPage(url) {
           <text class="doc-icon" style="color:#558b2f;">📃</text>
           <text class="doc-lbl">商品列表</text>
         </view>
+        <view class="doc-item" @click="goPage('/pages/pending/list')">
+          <text class="doc-icon" style="color:#e65100;">⏳</text>
+          <text class="doc-lbl">待审批</text>
+        </view>
       </view>
     </view>
   </view>

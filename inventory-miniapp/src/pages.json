@@ -26,7 +26,8 @@
     {"path": "pages/supplier/edit", "style": {"navigationBarTitleText": "供应商信息"}},
     {"path": "pages/customer/list", "style": {"navigationBarTitleText": "客户管理", "enablePullDownRefresh": true}},
     {"path": "pages/customer/edit", "style": {"navigationBarTitleText": "客户信息"}},
-    {"path": "pages/report/index", "style": {"navigationBarTitleText": "统计报表"}}
+    {"path": "pages/report/index", "style": {"navigationBarTitleText": "统计报表"}},
+    {"path": "pages/pending/list", "style": {"navigationBarTitleText": "待审批列表", "enablePullDownRefresh": true}}
   ],
   "globalStyle": {
     "navigationBarTextStyle": "black",

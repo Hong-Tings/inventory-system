@@ -149,6 +149,7 @@ async function handleSaveDraft() {
       editingId.value = res.data
     }
     uni.showToast({ title: '已保存草稿', icon: 'success' })
+    setTimeout(() => uni.redirectTo({ url: '/pages/transfer/list' }), 300)
   } finally { submitting.value = false }
 }
 

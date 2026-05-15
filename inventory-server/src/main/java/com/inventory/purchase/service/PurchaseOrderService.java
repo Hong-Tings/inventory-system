@@ -78,7 +78,7 @@ public class PurchaseOrderService {
 
         // 默认排除已作废
         wrapper.ne(PurchaseOrder::getStatus, OrderStatus.VOIDED);
-        // 数量和金额筛选需要单独处理
+        if (status != null) wrapper.eq(PurchaseOrder::getStatus, status);
         if (minQuantity != null) wrapper.ge(PurchaseOrder::getTotalQuantity, minQuantity);
         if (maxQuantity != null) wrapper.le(PurchaseOrder::getTotalQuantity, maxQuantity);
 

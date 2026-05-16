@@ -1,6 +1,5 @@
 package com.inventory.product.controller;
 
-import cn.dev33.satoken.annotation.SaCheckRole;
 import cn.hutool.core.util.StrUtil;
 import com.google.zxing.BarcodeFormat;
 import com.google.zxing.MultiFormatWriter;
@@ -28,7 +27,6 @@ import java.util.zip.ZipOutputStream;
 @Tag(name = "商品条码")
 @RestController
 @RequestMapping("/api/v1/product/barcode")
-@SaCheckRole("role_1")
 @RequiredArgsConstructor
 public class BarcodeController {
 

@@ -108,17 +108,66 @@ spring:
 
 本地开发可以直接使用 root 账号，按实际密码修改 `password` 即可。
 
+### 3.5 数据库升级脚本
+
+数据库表结构变更使用增量升级脚本，位于 `sql/` 目录下：
+
+| 脚本 | 说明 |
+|------|------|
+| `01-schema.sql` | 初始建库脚本（21 张表），仅首次部署使用 |
+| `02-upgrade-approval-audit.sql` | 审批审计字段升级：为采购/销售/调拨表添加 `approver_id`、`approve_time` 字段及状态注释更新 |
+
+升级方式：
+
+```bash
+# 已有数据库升级
+mysql -u root -p inventory < sql/02-upgrade-approval-audit.sql
+```
+
+> **注意**：`01-schema.sql` 已包含最新的审批审计字段，新部署直接执行即可。已有数据库需单独执行升级脚本。
+
 ---
 
 ## 四、启动后端服务
 
 ### 4.1 配置检查
 
+#### 数据库连接
+
 确认 `application.yml` 中的数据库连接信息正确，特别是：
 
 - `spring.datasource.url` — 数据库地址和库名
 - `spring.datasource.username` — 数据库用户名
 - `spring.datasource.password` — 数据库密码
+
+#### Sa-Token 认证配置
+
+```yaml
+sa-token:
+  token-name: Authorization
+  token-prefix: Bearer
+  jwt-secret-key: inventory-system-jwt-secret-key-2024   # JWT 密钥，开发环境可用默认值
+  timeout: 86400                # Token 有效期（秒），默认 24 小时
+  active-timeout: 1800          # 活跃超时（秒），1800=30 分钟无操作需重新登录
+  is-concurrent: false          # 不允许同一账号同时登录（新登录踢掉旧登录）
+  is-share: false               # 每个登录互不共享
+```
+
+> **生产环境必须修改 `jwt-secret-key` 为随机字符串（至少 32 位）**。
+
+#### 审批审计字段
+
+系统支持完整的审批流程（草稿 → 待审批 → 已入库/已出库）。后端 Service 层已实现状态流转控制：
+
+| 状态 | 说明 | 可执行操作 |
+|------|------|-----------|
+| 0 (DRAFT) | 草稿 | 编辑、提交、取消、作废（管理员） |
+| 4 (PENDING) | 待审批 | 审核通过（管理员）、驳回（管理员） |
+| 1 (CONFIRMED) | 已入库/已出库/已完成 | 取消（管理员，涉及库存回滚） |
+| 2 (CANCELED) | 已取消 | 作废（管理员） |
+| 3 (VOIDED) | 已作废 | 仅可查看 |
+
+> **权限要点**：取消已影响库存的单据（CONFIRMED 状态）仅管理员可操作，Service 层有角色校验。
 
 ### 4.2 启动
 
@@ -172,7 +221,7 @@ npm run dev
 
 ### 5.3 Vite 代理配置
 
-开发模式下 API 请求通过 Vite 代理转发到后端（`vite.config.ts`）：
+开发模式下 API 和上传文件请求通过 Vite 代理转发到后端（`inventory-admin/vite.config.ts`）：
 
 ```typescript
 server: {
@@ -182,11 +231,17 @@ server: {
       target: 'http://localhost:8080',
       changeOrigin: true,
     },
+    '/uploads': {
+      target: 'http://localhost:8080',
+      changeOrigin: true,
+    },
   },
 },
 ```
 
-前端代码中所有 `/api/xxx` 的请求自动转发至后端 `localhost:8080`，无需配置跨域。
+前端代码中所有 `/api/xxx` 和 `/uploads/xxx` 的请求自动转发至后端 `localhost:8080`，无需配置跨域。
+
+> **配置修改**：如果后端端口不是 8080，同步修改 `vite.config.ts` 中的 `target` 地址。
 
 ### 5.4 构建生产包
 

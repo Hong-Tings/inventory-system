@@ -54,21 +54,25 @@
 - **自动编码** — 商品/仓库/客户/供应商编码自动生成（前缀 + yyyyMMdd + 流水号），禁止手动输入
 
 ### 采购入库
-- 新建入库单（含明细）、草稿保存、提交入库（库存增加）、取消（回滚库存）、作废
-- 状态流转：草稿 → 已入库 → 已取消 → 已作废
+- 新建入库单（含明细）、草稿保存、提交审批、审核入库（库存增加）、取消（回滚库存）、驳回（退回草稿）、作废
+- 完整状态流转：草稿(0) → 待审批(4) → 已入库(1) → 已取消(2) → 已作废(3)
 - 支持扫描商品条码快速录入
+- 取消已入库单据仅管理员可操作（涉及库存回滚）
 
 ### 销售出库
-- 新建出库单（含明细）、草稿保存、提交出库（FIFO 扣减库存）
+- 新建出库单（含明细）、草稿保存、提交审批、审核出库（FIFO 扣减库存）
 - 库存不足拦截、安全库存预警提醒
 - 出库取消自动回滚库存
+- 状态流转：草稿(0) → 待审批(4) → 已出库(1) → 已取消(2) → 已作废(3)
+- 取消已出库单据仅管理员可操作
 
 ### 库存管理
-- **库存查询** — 按商品/仓库多维度查询，可用/锁定/在途库存区分，预警变色显示
+- **库存查询** — 按商品/仓库多维度查询，仓库树展示，多级层级展开/折叠，批次维度存储
 - **库存流水** — 按商品/仓库/类型/单号/操作人/时间全量追溯
 - **安全库存预警** — 低于阈值标红提醒
-- **库存盘点** — 全盘/抽盘、差异计算、审核确认、盈亏调整
-- **库存调拨** — 跨仓库调拨、源仓扣减/目标仓增加、禁止同仓库调拨
+- **库存盘点** — 全盘/抽盘、差异计算、审核确认、盈亏调整（盘点中→已审核→已调整）
+- **库存调拨** — 跨仓库调拨、源仓扣减/目标仓增加、禁止同仓库调拨、提交审批流程
+- 盘点执行调整仅管理员可操作
 
 ### 统计报表
 - **工作台仪表盘** — 商品总数、仓库数、今日/本月单据量、预警数
@@ -97,11 +101,31 @@
 ### 方式一：Docker 部署（推荐）
 
 ```bash
-# 1. 修改 docker-compose.yml 中的默认密码
+# 1. 修改 docker-compose.yml 中的默认密码和配置
 # 2. 一键启动
 docker-compose up -d
 
 # 3. 查看运行状态
+docker-compose ps
+docker-compose logs -f
+```
+
+#### Docker Compose 配置说明
+
+`docker-compose.yml` 中需要修改的关键配置：
+
+| 配置项 | 位置 | 说明 |
+|--------|------|------|
+| `MYSQL_ROOT_PASSWORD` | mysql.environment | MySQL root 密码，默认 `root123`，生产环境务必修改 |
+| `SPRING_DATASOURCE_PASSWORD` | server.environment | 后端连接数据库密码，需与上方保持一致 |
+| `SPRING_DATASOURCE_URL` | server.environment | 数据库连接地址，默认连接 docker 内的 mysql 容器 |
+| `APP_UPLOAD_BASE_PATH` | server.environment | 上传文件存储路径，默认 `/app/uploads` |
+| `3307:3306` | mysql.ports | MySQL 宿主机端口映射，3306→3307 避免与本地 MySQL 冲突 |
+| `./data/mysql` | mysql.volumes | MySQL 数据持久化目录 |
+| `./data/uploads` | server.volumes | 上传文件持久化目录 |
+
+```bash
+# 启动后查看运行状态
 docker-compose ps
 docker-compose logs -f
 ```
@@ -133,7 +157,7 @@ FLUSH PRIVILEGES;
 
 #### 2. 配置生产参数
 
-复制并编辑 `application-prod.yml`（需自行创建）：
+创建 `inventory-server/src/main/resources/application-prod.yml`（Spring Boot 通过 `--spring.profiles.active=prod` 激活），需要修改的关键配置：
 
 ```yaml
 spring:
@@ -143,7 +167,9 @@ spring:
     password: 你的数据库密码
 
 sa-token:
-  jwt-secret-key: 替换为随机字符串，至少32位
+  jwt-secret-key: 替换为随机字符串，至少32位  # 安全要求：32位以上随机字符
+  timeout: 86400               # Token 有效期（秒），可按需调整
+  active-timeout: 1800         # 活跃超时（秒），1800=30分钟
 
 app:
   upload-base-path: /data/inventory/uploads   # 上传文件存储路径
@@ -151,7 +177,13 @@ app:
 mybatis-plus:
   configuration:
     log-impl: org.apache.ibatis.logging.nologging.NoLoggingImpl  # 关闭 SQL 日志
+
+logging:
+  level:
+    com.inventory: warn        # 生产环境降低日志级别
 ```
+
+> **后端启动命令**：`java -jar target/inventory-server-*.jar --spring.profiles.active=prod`
 
 #### 3. 创建上传目录
 
@@ -184,6 +216,8 @@ server {
     listen 80;
     server_name 你的域名或IP;
 
+    client_max_body_size 10m;   # 上传文件大小限制，与后端 multipart 配置一致
+
     location / {
         root /data/inventory/admin;
         index index.html;
@@ -201,9 +235,12 @@ server {
     location /uploads/ {
         proxy_pass http://127.0.0.1:8080;
         proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
     }
 }
 ```
+
+> **Nginx 配置位置**：Nginx 配置文件位于 `inventory-admin/nginx.conf`（Docker 部署使用），手动部署时请参考上述内容自行配置。
 
 #### 6. 数据库定时备份
 
@@ -223,28 +260,56 @@ find /data/inventory/backup -mtime +30 -name "*.sql" -delete
 ### 小程序部署说明
 
 1. 修改 `inventory-miniapp/src/api/request.js` 中的 `BASE_URL` 为生产环境地址
+
+```js
+// 第 2 行，将开发地址改为生产域名
+const BASE_URL = 'https://你的域名/api/v1'
+```
+
+> **修改说明**：该文件第 1 行有注释提示，`BASE_URL` 位于第 2 行。开发时填局域网 IP（如 `http://192.168.x.x:8080/api/v1`），生产填已备案域名。
+
 2. 确保后端地址**公网可访问**，小程序不支持内网 IP
 3. 图片 URL 需要后端域名可被小程序访问，注意 HTTPS 要求（微信小程序生产环境要求已备案域名 + HTTPS）
 
 ```bash
 cd inventory-miniapp
 npm install
-npm run build:mp-weixin
+npm run build:mp-weixin     # 产物在 dist/build/mp-weixin/
 ```
 
 用微信开发者工具打开 `dist/build/mp-weixin/`，上传审核发布。
 
 ### 生产检查清单
 
-- [ ] 数据库创建专用账号（不使用 root）
-- [ ] JWT 密钥替换为随机字符串（≥32 位）
-- [ ] 数据库密码通过启动参数或环境变量传入，不硬编码
+#### 数据库
+- [ ] 创建专用数据库账号（不使用 root）
+- [ ] 修改 `application-prod.yml` 中的数据库密码
+- [ ] 数据库密码通过环境变量或启动参数传入，不硬编码到配置文件
+- [ ] 执行增量升级脚本（如有）：`sql/02-upgrade-approval-audit.sql`
+- [ ] 配置数据库定时备份
+
+#### 后端
+- [ ] JWT 密钥替换为随机字符串（≥32 位）：`sa-token.jwt-secret-key`
 - [ ] MyBatis SQL 日志关闭（`NoLoggingImpl`）
-- [ ] 上传目录已创建且有写入权限
-- [ ] Nginx 配置了 `/uploads/` 反向代理
-- [ ] 数据库定时备份已配置
-- [ ] 小程序 BASE_URL 已改为生产地址
+- [ ] 日志级别改为 `warn`：`logging.level.com.inventory: warn`
+- [ ] 上传目录已创建且有写入权限：`app.upload-base-path`
+- [ ] Token 有效期按需调整：`sa-token.timeout` / `sa-token.active-timeout`
+
+#### Nginx
+- [ ] 配置了 `/api/` 反向代理到后端 8080 端口
+- [ ] 配置了 `/uploads/` 反向代理到后端 8080 端口
+- [ ] 设置 `client_max_body_size 10m`（与后端 `max-file-size` 一致）
+- [ ] Nginx 配置文件位于 `inventory-admin/nginx.conf`
+
+#### 小程序
+- [ ] `BASE_URL` 已改为生产域名（`src/api/request.js` 第 2 行）
+- [ ] 生产环境需已备案域名 + HTTPS
+- [ ] 小程序后台配置合法域名白名单
+
+#### 安全
 - [ ] 生产环境建议配置 HTTPS
+- [ ] Docker 部署时修改 `docker-compose.yml` 默认密码
+- [ ] Docker 部署时确认数据卷映射目录已创建
 
 ## 测试账号
 
